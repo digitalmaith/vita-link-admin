@@ -31,7 +31,7 @@ jobs:
 
       # 🔍 LINT (stable, no prompts, strict mode)
       - name: 🔍 Lint
-        run: npx eslint . --max-warnings=0
+        run:  npm run lint
 
       # 🏷️ Type checking strict
       - name: 🏷️ Type-check
