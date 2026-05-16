@@ -3,6 +3,8 @@ import { KPISection } from "@/components/dashboard/KPISection";
 import { AlertsPanel } from "@/components/dashboard/AlertsPanel";
 import { RegionHeatmap } from "@/components/dashboard/RegionHeatmap";
 import { FilterBar } from "@/components/shared/FilterBar";
+import { DonationTrendChart } from "@/components/reports/DonationTrendChart";
+import { ChartAreaInteractive } from "@/components/dashboard/ChartAreaInteractive";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -26,6 +28,8 @@ export default function DashboardPage() {
           <AlertsPanel />
         </div>
       </div>
+      <FilterBar showRegion showDateRange />
+      <ChartAreaInteractive />
     </div>
   );
 }

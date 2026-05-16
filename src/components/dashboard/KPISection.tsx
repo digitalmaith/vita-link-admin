@@ -4,6 +4,14 @@ import { Heart, Clock, AlertTriangle, Users, Hospital } from "lucide-react";
 import { KPICard } from "./KPICard";
 import { useDashboardKPIs } from "@/lib/hooks/useDashboardKPIs";
 
+
+type KPIVariant = "default" | "success" | "warning" | "danger";
+
+function getStockVariant(value: number): KPIVariant {
+  if (value > 3) return "danger";
+  if (value > 0) return "warning";
+  return "default";
+}
 export function KPISection() {
   const { data: kpis, isLoading } = useDashboardKPIs();
 
@@ -29,7 +37,7 @@ export function KPISection() {
       value: kpis?.criticalStockRegions ?? 0,
       icon: AlertTriangle,
       description: "Régions nécessitant une attention urgente",
-      variant: kpis && kpis.criticalStockRegions > 3 ? "danger" : "warning" as const,
+      variant: kpis ? getStockVariant(kpis.criticalStockRegions) : "default",
     },
     {
       title: "Jambaars actifs",

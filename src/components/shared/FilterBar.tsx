@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import type { Region } from "@/types";
 
 interface FilterBarProps {
   showRegion?: boolean;
@@ -31,7 +32,9 @@ export function FilterBar({
       {showRegion && (
         <Select
           value={filters.region ?? "all"}
-          onValueChange={(v) => setFilter("region", v === "all" ? undefined : v)}
+          onValueChange={(v) =>
+            setFilter("region", v === "all" ? undefined : (v as Region))
+          }
         >
           <SelectTrigger className="w-44 h-9">
             <SelectValue placeholder="Toutes les régions" />
@@ -48,7 +51,9 @@ export function FilterBar({
       {showBloodGroup && (
         <Select
           value={filters.bloodGroup ?? "all"}
-          onValueChange={(v) => setFilter("bloodGroup", v === "all" ? undefined : v)}
+          onValueChange={(v) =>
+            setFilter("region", v === "all" ? undefined : (v as Region))
+          }
         >
           <SelectTrigger className="w-36 h-9">
             <SelectValue placeholder="Groupe sanguin" />
