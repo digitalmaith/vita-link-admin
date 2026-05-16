@@ -34,6 +34,12 @@
     /* Sidebar */
     --sidebar-width: 260px;
     --sidebar-collapsed-width: 64px;
+
+    --chart-1: 0 72% 51%;      /* Rouge Vita-Link */
+    --chart-2: 12 76% 61%;     /* Orange urgence */
+    --chart-3: 38 92% 50%;     /* Ambre */
+    --chart-4: 142 71% 45%;    /* Vert succès */
+    --chart-5: 221 83% 53%;    /* Bleu info */
   }
 
   .dark {
@@ -61,6 +67,12 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 0 72% 51%;
+
+    --chart-1: 0 72% 58%;
+    --chart-2: 12 76% 66%;
+    --chart-3: 38 92% 58%;
+    --chart-4: 142 60% 52%;
+    --chart-5: 221 83% 65%;
   }
 }
 

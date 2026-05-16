@@ -4,11 +4,11 @@
 
 import type { BloodGroup, Region } from "@/types";
 
-export const BLOOD_GROUPS: BloodGroup[] = [
+export const BLOOD_GROUPS = [
   "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-",
-];
+] as const;
 
-export const REGIONS: Region[] = [
+export const REGIONS = [
   "Dakar",
   "Thiès",
   "Saint-Louis",
@@ -23,7 +23,7 @@ export const REGIONS: Region[] = [
   "Kédougou",
   "Matam",
   "Sédhiou",
-];
+] as const;
 
 export const JAMBAAR_GRADES = [
   { value: "RECRUE", label: "Recrue", minDonations: 0 },
