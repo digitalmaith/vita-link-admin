@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { ModeToggle } from "../shared/Toggle";
 
 const BREADCRUMB_MAP: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -49,6 +50,8 @@ export function Header() {
         <Button variant="ghost" size="icon" aria-label="Rechercher">
           <Search className="w-4 h-4" />
         </Button>
+        <ModeToggle />
+
 
         {/* Notifications */}
         <Button
