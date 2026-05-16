@@ -171,10 +171,10 @@ export interface Badge {
 // --- Dashboard KPIs ---
 
 export interface DashboardKPIs {
-  livesSaved: number;
+  livesSavedEstimate: number;
   avgResponseTimeMinutes: number;
-  criticalStockRegions: number;
-  activeJambaars: number;
+  criticalStocksCount: number;
+  totalDonors: number;
   openAlerts: number;
   totalStructures: number;
 }
