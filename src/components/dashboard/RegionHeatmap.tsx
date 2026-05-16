@@ -8,7 +8,7 @@ import { Map as MapIcon } from "lucide-react";
 import { useFiltersStore } from "@/store/filters.store";
 import { REGIONS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import type { Region } from "@/types";
+import type { HeatmapPoint, Region } from "@/types";
 
 // Niveau de criticité par couleur
 function getDemandColor(level: number): string {
@@ -21,16 +21,14 @@ function getDemandColor(level: number): string {
 export function RegionHeatmap() {
   const { filters } = useFiltersStore();
 
-  const { data: heatmapData, isLoading } = useQuery({
+  const { data: heatmapData = [] , isLoading } = useQuery({
     queryKey: ["dashboard", "heatmap", filters],
     queryFn: () => dashboardService.getHeatmapData(filters),
-    refetchInterval: 60 * 1000,
   });
 
-  // Créer un map région → niveau de demande
-  const demandByRegion: Map<Region, number> = new Map(
-  (heatmapData ?? []).map((p) => [p.region, p.demandLevel] as [Region, number])
-);
+  const demandByRegion = new Map<Region, number>(
+    heatmapData.map((p) => [p.region, p.demandLevel])
+  );
 
   return (
     <Card className="h-full">

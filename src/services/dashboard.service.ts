@@ -1,9 +1,5 @@
-// =============================================
-// VITA-LINK ADMIN — Dashboard Service
-// =============================================
-
 import { api } from "@/lib/api/client";
-import type { DashboardKPIs, HeatmapPoint, Alert, Region, BloodGroup } from "@/types";
+import type { DashboardKPIs, Alert, Region, BloodGroup , HeatmapPoint} from "@/types";
 
 export interface DashboardFilters {
   region?: Region;
@@ -13,15 +9,25 @@ export interface DashboardFilters {
 }
 
 export const dashboardService = {
-  getKPIs: (filters?: DashboardFilters) =>
-    api.get<DashboardKPIs>("/dashboard/kpis", { params: filters }),
+  async getKPIs(): Promise<DashboardKPIs> {
+    const res = await api.get<{ success: boolean; kpis: DashboardKPIs }>(
+      "/admin/dashboard"
+    );
+    return res.kpis;
+  },
 
-  getHeatmapData: (filters?: DashboardFilters) =>
-    api.get<HeatmapPoint[]>("/dashboard/heatmap", { params: filters }),
+  getHeatmapData: async (filters?: DashboardFilters): Promise<HeatmapPoint[]> => {
+  const res = await api.get<{ data: HeatmapPoint[] }>("/dashboard/heatmap", {
+    params: filters,
+  });
 
+  return res.data;
+},
   getSystemAlerts: () =>
     api.get<Alert[]>("/dashboard/alerts"),
 
   getRecentAlerts: (limit = 10) =>
-    api.get<Alert[]>("/alerts", { params: { limit, sort: "createdAt:desc" } }),
+    api.get<Alert[]>("/alerts", {
+      params: { limit, sort: "createdAt:desc" },
+    }),
 };

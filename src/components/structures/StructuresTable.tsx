@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useStructures, useValidateStructure, useRejectStructure, useSuspendStructure } from "@/lib/hooks/useStructures";
+import { useStructures, useValidateStructure, useRejectStructure, useSuspendStructure } from "@/hooks/useStructures";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

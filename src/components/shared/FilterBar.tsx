@@ -2,6 +2,7 @@
 
 import { useFiltersStore } from "@/store/filters.store";
 import { BLOOD_GROUPS, REGIONS } from "@/lib/constants";
+import type { Region, BloodGroup } from "@/types";
 import {
   Select,
   SelectContent,
@@ -11,7 +12,6 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import type { Region } from "@/types";
 
 interface FilterBarProps {
   showRegion?: boolean;
@@ -25,48 +25,65 @@ export function FilterBar({
   showBloodGroup = false,
 }: FilterBarProps) {
   const { filters, setFilter, clearFilters } = useFiltersStore();
+
   const hasActiveFilters = filters.region || filters.bloodGroup;
 
   return (
     <div className="flex flex-wrap items-center gap-3">
+
+      {/* REGION */}
       {showRegion && (
         <Select
           value={filters.region ?? "all"}
           onValueChange={(v) =>
-            setFilter("region", v === "all" ? undefined : (v as Region))
+            setFilter(
+              "region",
+              v === "all" ? undefined : (v as Region)
+            )
           }
         >
           <SelectTrigger className="w-44 h-9">
             <SelectValue placeholder="Toutes les régions" />
           </SelectTrigger>
+
           <SelectContent>
             <SelectItem value="all">Toutes les régions</SelectItem>
             {REGIONS.map((r) => (
-              <SelectItem key={r} value={r}>{r}</SelectItem>
+              <SelectItem key={r} value={r}>
+                {r}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       )}
 
+      {/* BLOOD GROUP */}
       {showBloodGroup && (
         <Select
           value={filters.bloodGroup ?? "all"}
           onValueChange={(v) =>
-            setFilter("region", v === "all" ? undefined : (v as Region))
+            setFilter(
+              "bloodGroup",
+              v === "all" ? undefined : (v as BloodGroup)
+            )
           }
         >
           <SelectTrigger className="w-36 h-9">
             <SelectValue placeholder="Groupe sanguin" />
           </SelectTrigger>
+
           <SelectContent>
             <SelectItem value="all">Tous les groupes</SelectItem>
             {BLOOD_GROUPS.map((g) => (
-              <SelectItem key={g} value={g}>{g}</SelectItem>
+              <SelectItem key={g} value={g}>
+                {g}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       )}
 
+      {/* RESET */}
       {hasActiveFilters && (
         <Button
           variant="ghost"
