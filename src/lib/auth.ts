@@ -1,6 +1,48 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
+/* =========================================
+   🔄 REFRESH TOKEN LOGIC
+========================================= */
+async function refreshAccessToken(token: any) {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          refreshToken: token.refreshToken,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok || !data.accessToken) {
+      throw new Error("Refresh failed");
+    }
+
+    return {
+      ...token,
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken ?? token.refreshToken,
+      accessTokenExpires: Date.now() + 15 * 60 * 1000, // 15 min
+      error: undefined,
+    };
+  } catch (error) {
+    return {
+      ...token,
+      error: "RefreshAccessTokenError",
+    };
+  }
+}
+
+/* =========================================
+   🔐 NEXT AUTH CONFIG
+========================================= */
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -9,6 +51,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Mot de passe", type: "password" },
       },
+
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
@@ -29,6 +72,8 @@ export const authOptions: NextAuthOptions = {
 
           if (!data.success || !data.accessToken) return null;
 
+         
+
           return {
             id: data.user.id,
             email: data.user.email,
@@ -46,33 +91,59 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
+    async signIn({ user }) {
+      return true;
+    },
+    /* =========================================
+       JWT CALLBACK (REFRESH HERE)
+    ========================================= */
     async jwt({ token, user }) {
+      // 1. First login
       if (user) {
-        token.accessToken = (user as any).accessToken;
-        token.refreshToken = (user as any).refreshToken;
-        token.role = (user as any).role;
-        token.id = (user as any).id;
+        return {
+          ...token,
+          id: (user as any).id,
+          role: (user as any).role,
+          accessToken: (user as any).accessToken,
+          refreshToken: (user as any).refreshToken,
+          accessTokenExpires: Date.now() + 15 * 60 * 1000, // 15 min
+        };
       }
-      return token;
+
+      // 2. Still valid
+      if (
+        token.accessTokenExpires &&
+        Date.now() < (token.accessTokenExpires as number)
+      ) {
+        return token;
+      }
+
+      // 3. Expired → refresh
+      return await refreshAccessToken(token);
     },
 
+    /* =========================================
+       SESSION
+    ========================================= */
     async session({ session, token }) {
       (session.user as any).id = token.id;
       (session.user as any).role = token.role;
+
       session.accessToken = token.accessToken as string;
       session.refreshToken = token.refreshToken as string;
+
       return session;
     },
   },
 
   pages: {
     signIn: "/login",
-    error: "/login",
+    error: "/unauthorized",
   },
 
   session: {
     strategy: "jwt",
-    maxAge: 30 * 60,
+    maxAge: 30 * 60, // 30 min session
   },
 
   secret: process.env.NEXTAUTH_SECRET,

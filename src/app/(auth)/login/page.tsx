@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+// import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Activity, Loader2 } from "lucide-react";
+import { getSession, signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,7 +28,15 @@ export default function LoginPage() {
     if (result?.error) {
       setError("Email ou mot de passe incorrect.");
       setIsLoading(false);
-    } else {
+    } 
+    if (result?.ok) {
+      const session = await getSession();
+
+      if ((session?.user as any)?.role !== "ADMIN") {
+        router.push("/unauthorized");
+        return;
+      }
+
       router.push("/dashboard");
     }
   };
