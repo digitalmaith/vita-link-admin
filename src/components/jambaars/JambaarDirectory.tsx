@@ -15,12 +15,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PauseCircle, CheckCircle } from "lucide-react";
+import { MoreHorizontal, PauseCircle, CheckCircle, Eye, Star } from "lucide-react";
+import { SuspensionModal } from "./SuspensionModal";
+import { PointsAdjustmentModal } from "./PointsAdjustmentModal";
+import { JambaarDetailsSheet } from "./JambaarDetailsSheet";
 import { getInitials, formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Jambaar } from "@/types";
 
-const GRADE_LABELS: Record<Jambaar["grade"], string> = {
+const GRADE_LABELS: Record<string, string> = {
+  ASPIRANT: "🩸 Aspirant",
+  SENTINELLE: "🛡️ Sentinelle",
+  AMBASSADEUR: "🌟 Ambassadeur",
+  // Fallbacks
   RECRUE: "🩸 Recrue",
   JAMBAAR: "⚔️ Jambaar",
   JAMBAAR_ELITE: "🌟 Élite",
@@ -32,22 +39,23 @@ export function JambaarDirectory() {
   const { filters } = useFiltersStore();
   const queryClient = useQueryClient();
 
+  const [selectedJambaar, setSelectedJambaar] = useState<Jambaar | null>(null);
+  const [isSuspendOpen, setIsSuspendOpen] = useState(false);
+  const [isPointsOpen, setIsPointsOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
   const { data, isLoading } = useQuery({
     queryKey: ["jambaars", filters, page],
     queryFn: () =>
       jambaarService.getAll(
-        { bloodGroup: filters.bloodGroup, region: filters.region },
+        { 
+          bloodGroup: filters.bloodGroup, 
+          region: filters.region,
+          search: filters.search,
+          grade: filters.grade
+        },
         page
       ),
-  });
-
-  const suspend = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      jambaarService.suspend(id, reason),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["jambaars"] });
-      toast.success("Jambaar suspendu");
-    },
   });
 
   const reactivate = useMutation({
@@ -104,12 +112,32 @@ export function JambaarDirectory() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectedJambaar(j);
+                          setIsDetailsOpen(true);
+                        }}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        Voir détails
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectedJambaar(j);
+                          setIsPointsOpen(true);
+                        }}
+                      >
+                        <Star className="mr-2 h-4 w-4" />
+                        Ajuster les points
+                      </DropdownMenuItem>
+                      
                       {j.status === "ACTIVE" ? (
                         <DropdownMenuItem
                           className="text-amber-600"
-                          onClick={() =>
-                            suspend.mutate({ id: j.id, reason: "Absence répétée" })
-                          }
+                          onClick={() => {
+                            setSelectedJambaar(j);
+                            setIsSuspendOpen(true);
+                          }}
                         >
                           <PauseCircle className="mr-2 h-4 w-4" />
                           Suspendre
@@ -167,6 +195,23 @@ export function JambaarDirectory() {
           </div>
         </div>
       )}
+
+      {/* Modals & Sheets */}
+      <SuspensionModal
+        jambaar={selectedJambaar}
+        isOpen={isSuspendOpen}
+        onClose={() => setIsSuspendOpen(false)}
+      />
+      <PointsAdjustmentModal
+        jambaar={selectedJambaar}
+        isOpen={isPointsOpen}
+        onClose={() => setIsPointsOpen(false)}
+      />
+      <JambaarDetailsSheet
+        jambaar={selectedJambaar}
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+      />
     </div>
   );
 }
