@@ -2,7 +2,7 @@
 
 import { Activity, RefreshCw, TrendingUp, AlertTriangle } from "lucide-react";
 import { KPICard } from "./KPICard";
-import type { KPICardProps } from "./kpi-types";
+import type { KPICardProps } from "../../../types/kpi-types";
 
 interface KPISectionProps {
   cards?: KPICardProps[]; // ✅ Rendre optionnel
@@ -24,27 +24,10 @@ export function KPISection({
   return (
     <section className="space-y-6">
       {/* En-tête */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
-              Données en direct
-            </span>
-          </div>
-          
-          {onRefresh && (
-            <button
-              onClick={onRefresh}
-              className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-              title="Actualiser les données"
-            >
-              <RefreshCw className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
-            </button>
-          )}
-        </div>
+        
       </div>
 
       {/* Grille de KPIs */}

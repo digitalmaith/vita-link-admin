@@ -4,7 +4,7 @@ import { KPISection } from "@/components/dashboard/kpi/KPISection";
 import { useDashboardKPIs } from "@/hooks/useDashboardKPIs";
 import { adaptDashboardKPIs } from "@/adapters/dashboard.adapter";
 import { Heart, Clock, AlertTriangle, Users, Hospital } from "lucide-react";
-import type { KPICardProps, KPIVariant } from "@/components/dashboard/kpi/kpi-types";
+import type { KPICardProps, KPIVariant } from "@/types/kpi-types";
 
 export function DashboardKPISection() {
   const { data: rawKpis, isLoading, refetch } = useDashboardKPIs();
@@ -15,7 +15,7 @@ export function DashboardKPISection() {
       title: "Vies sauvées",
       value: kpis?.livesSaved ?? 0,
       icon: Heart,
-      description: "Estimation des vies sauvées grâce aux dons",
+      description: "Estimation des vies sauvées ",
       variant: "success" as KPIVariant,
       trend: "up",
       trendValue: "+12%",

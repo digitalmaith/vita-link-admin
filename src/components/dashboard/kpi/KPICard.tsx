@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VARIANT_STYLES, TREND_CONFIG } from "./kpi-styles";
-import type { KPICardProps } from "./kpi-types";
+import type { KPICardProps } from "../../../types/kpi-types";
 
 export function KPICard({
   title,

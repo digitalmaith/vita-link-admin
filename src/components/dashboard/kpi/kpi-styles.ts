@@ -1,5 +1,5 @@
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
-import type { KPIVariant, KPITrend, VariantStyles, TrendConfig } from "./kpi-types";
+import type { KPIVariant, KPITrend, VariantStyles, TrendConfig } from "../../../types/kpi-types";
 
 export const VARIANT_STYLES: Record<KPIVariant, VariantStyles> = {
   default: {
