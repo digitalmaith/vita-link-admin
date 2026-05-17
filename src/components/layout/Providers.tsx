@@ -16,7 +16,8 @@ export function Providers({ children }: ProvidersProps) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 30 * 1000,       // 30s — dashboard en quasi temps réel
+            staleTime: 5 * 60 * 1000,       // 30s — dashboard en quasi temps réel
+            gcTime: 10 * 60 * 1000, // 10 minutes
             retry: 1,
             refetchOnWindowFocus: false,
           },

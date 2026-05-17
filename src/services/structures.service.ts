@@ -1,60 +1,50 @@
-// =============================================
-// VITA-LINK ADMIN — Structures Service
-// Principe S : responsabilité unique = opérations CRUD sur les structures
-// Principe D : dépend de l'abstraction `api`, pas d'axios
-// =============================================
-
 import { api } from "@/lib/api/client";
-import type {
-  HealthStructure,
-  ApiResponse,
-  PaginatedResponse,
-  GlobalFilters,
-  Status,
-} from "@/types";
 
-export interface StructuresFilters extends GlobalFilters {
-  status?: Status;
+export interface StructureCount {
+  staffMembers: number;
+  alerts: number;
+  donations: number;
 }
 
-const BASE = "/structures";
+export interface HealthStructure {
+  id: string;
+  name: string;
+  registrationNumber: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  phone: string;
+  email: string;
+  isVerified: boolean;
+  status: "VERIFIED" | "PENDING" | "SUSPENDED" | "REJECTED";
+  verifiedAt: string | null;
+  createdAt: string;
+  _count: StructureCount;
+}
+
+export interface StructuresResponse {
+  success: boolean;
+  structures: HealthStructure[];
+}
+
+export interface StructuresFilters {
+  status?: string;
+  search?: string;
+}
 
 export const structuresService = {
-  /**
-   * Récupérer toutes les structures avec pagination et filtres
-   */
-  getAll: (filters?: StructuresFilters, page = 1, limit = 20) =>
-    api.get<PaginatedResponse<HealthStructure>>(BASE, {
-      params: { ...filters, page, limit },
-    }),
+  getAll: (filters?: StructuresFilters) =>
+    api.get<StructuresResponse>("/health-structures", { params: filters }),
 
-  /**
-   * Récupérer une structure par ID
-   */
   getById: (id: string) =>
-    api.get<ApiResponse<HealthStructure>>(`${BASE}/${id}`),
+    api.get<{ success: boolean; structure: HealthStructure }>(`/health-structures/${id}`),
 
-  /**
-   * Valider (certifier) une structure
-   */
-  validate: (id: string) =>
-    api.patch<ApiResponse<HealthStructure>>(`${BASE}/${id}/validate`),
+  verify: (id: string) =>
+    api.patch<{ success: boolean; structure: HealthStructure }>(`/health-structures/${id}/verify`),
 
-  /**
-   * Rejeter une structure avec motif
-   */
-  reject: (id: string, reason: string) =>
-    api.patch<ApiResponse<HealthStructure>>(`${BASE}/${id}/reject`, { reason }),
-
-  /**
-   * Suspendre une structure
-   */
   suspend: (id: string, reason: string) =>
-    api.patch<ApiResponse<HealthStructure>>(`${BASE}/${id}/suspend`, { reason }),
+    api.patch<{ success: boolean; structure: HealthStructure }>(`/health-structures/${id}/suspend`, { reason }),
 
-  /**
-   * Récupérer les logs d'activité d'une structure
-   */
-  getActivityLogs: (id: string, page = 1, limit = 50) =>
-    api.get(`${BASE}/${id}/logs`, { params: { page, limit } }),
+  reject: (id: string, reason: string) =>
+    api.patch<{ success: boolean; structure: HealthStructure }>(`/health-structures/${id}/reject`, { reason }),
 };
