@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
+import { SUSPENSION_REASONS } from "@/lib/constants/structures.constants";
 
 interface Props {
   open: boolean;
@@ -15,13 +16,7 @@ interface Props {
   isLoading?: boolean;
 }
 
-const SUSPENSION_REASONS = [
-  "Abus détecté — alertes infondées répétées",
-  "Documents expirés ou invalides",
-  "Non-conformité aux protocoles Vita-Link",
-  "Signalement d'utilisateurs",
-  "Autre",
-];
+
 
 export function SuspendConfirmModal({
   open, structureName, onConfirm, onClose, isLoading,
