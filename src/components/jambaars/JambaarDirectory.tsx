@@ -87,20 +87,24 @@ export function JambaarDirectory() {
           </p>
         ) : (
           jambaars.map((j) => (
-            <Card key={j.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
+            <Card 
+              key={j.id} 
+              className="group overflow-hidden relative hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-border/50 hover:border-primary/30 bg-gradient-to-b from-card to-card/50"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 to-rose-400/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <CardContent className="p-5">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12 border-2 border-background shadow-sm group-hover:scale-105 transition-transform duration-300">
+                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 text-primary text-sm font-bold">
                         {getInitials(`${j.firstName} ${j.lastName}`)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold text-sm">
+                      <p className="font-bold text-base group-hover:text-primary transition-colors">
                         {j.firstName} {j.lastName}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs font-medium text-muted-foreground/80 mt-0.5">
                         {GRADE_LABELS[j.grade]}
                       </p>
                     </div>
@@ -155,18 +159,18 @@ export function JambaarDirectory() {
                   </DropdownMenu>
                 </div>
 
-                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                  <div className="bg-muted/50 rounded-md py-1.5">
-                    <p className="text-xs text-muted-foreground">Groupe</p>
-                    <p className="text-sm font-bold text-primary">{j.bloodGroup}</p>
+                <div className="mt-5 grid grid-cols-3 gap-3 text-center">
+                  <div className="bg-primary/5 hover:bg-primary/10 transition-colors rounded-xl py-2 px-1 border border-primary/10">
+                    <p className="text-[10px] uppercase font-semibold text-primary/70 tracking-wider mb-1">Groupe</p>
+                    <p className="text-lg font-black text-primary">{j.bloodGroup}</p>
                   </div>
-                  <div className="bg-muted/50 rounded-md py-1.5">
-                    <p className="text-xs text-muted-foreground">Dons</p>
-                    <p className="text-sm font-bold">{j.totalDonations}</p>
+                  <div className="bg-muted/40 hover:bg-muted/60 transition-colors rounded-xl py-2 px-1 border border-border/50">
+                    <p className="text-[10px] uppercase font-semibold text-muted-foreground/70 tracking-wider mb-1">Dons</p>
+                    <p className="text-lg font-bold">{j.totalDonations}</p>
                   </div>
-                  <div className="bg-muted/50 rounded-md py-1.5">
-                    <p className="text-xs text-muted-foreground">Présence</p>
-                    <p className="text-sm font-bold">{j.commitmentRate}%</p>
+                  <div className="bg-muted/40 hover:bg-muted/60 transition-colors rounded-xl py-2 px-1 border border-border/50">
+                    <p className="text-[10px] uppercase font-semibold text-muted-foreground/70 tracking-wider mb-1">Présence</p>
+                    <p className="text-lg font-bold">{j.commitmentRate}%</p>
                   </div>
                 </div>
 
