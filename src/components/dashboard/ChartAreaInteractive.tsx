@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
+import { useFiltersStore } from "@/store/filters.store";
 
 import {
   Card,
@@ -135,7 +136,8 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function ChartAreaInteractive() {
-  const [timeRange, setTimeRange] = React.useState("90d")
+  const [timeRange, setTimeRange] = React.useState("90d");
+  const filters = useFiltersStore((state) => state.filters);
 
   const filteredData = chartData.filter((item) => {
     const date = new Date(item.date)

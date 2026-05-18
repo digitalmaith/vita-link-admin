@@ -12,7 +12,9 @@ const httpClient: AxiosInstance = axios.create({
 
 // Ping au démarrage pour réveiller Render
 if (typeof window !== "undefined") {
-  fetch(`${BASE_URL}/health`).catch(() => {});
+  fetch(`${BASE_URL}/health-structures?limit=1`, {
+    headers: { "Content-Type": "application/json" },
+  }).catch(() => {});
 }
 
 httpClient.interceptors.request.use(

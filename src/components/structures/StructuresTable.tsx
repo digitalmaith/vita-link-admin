@@ -1,80 +1,96 @@
 "use client";
 
 import { useState } from "react";
-import { useStructures, useValidateStructure, useRejectStructure, useSuspendStructure } from "@/hooks/useStructures";
-import { StatusBadge } from "@/components/shared/StatusBadge";
+import { useStructures, useVerifyStructure, useSuspendStructure, useRejectStructure } from "@/hooks/useStructures";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, XCircle, PauseCircle, FileText } from "lucide-react";
+import { MoreHorizontal, CheckCircle, XCircle, PauseCircle, Users, Bell, Heart } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import type { HealthStructure } from "@/types";
+import type { HealthStructure } from "@/services/structures.service";
+
+const STATUS_CONFIG = {
+  VERIFIED: { label: "Certifiée", className: "bg-green-100 text-green-700" },
+  PENDING: { label: "En attente", className: "bg-amber-100 text-amber-700" },
+  SUSPENDED: { label: "Suspendue", className: "bg-red-100 text-red-700" },
+  REJECTED: { label: "Rejetée", className: "bg-gray-100 text-gray-600" },
+};
 
 export function StructuresTable() {
-  const [page, setPage] = useState(1);
-  const { data, isLoading } = useStructures(undefined, page);
-  const validate = useValidateStructure();
-  const reject = useRejectStructure();
+  const { data, isLoading } = useStructures();
+  const verify = useVerifyStructure();
   const suspend = useSuspendStructure();
+  const reject = useRejectStructure();
 
   if (isLoading) {
     return (
       <div className="space-y-3">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="h-16 w-full rounded-lg" />
         ))}
       </div>
     );
   }
 
-  const structures: HealthStructure[] = data?.data ?? [];
+  const structures: HealthStructure[] = data?.structures ?? [];
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/40">
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Structure</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Région</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Statut</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Alertes</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Inscrite le</th>
-                  <th className="px-4 py-3" />
+    <Card>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/40">
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Structure</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Adresse</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Statut</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Activité</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Inscrite le</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {structures.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-10 text-muted-foreground">
+                    Aucune structure trouvée.
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {structures.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-10 text-muted-foreground">
-                      Aucune structure trouvée.
-                    </td>
-                  </tr>
-                ) : (
-                  structures.map((s) => (
+              ) : (
+                structures.map((s) => {
+                  const statusConfig = STATUS_CONFIG[s.status];
+                  return (
                     <tr key={s.id} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
                         <p className="font-medium">{s.name}</p>
                         <p className="text-xs text-muted-foreground">{s.email}</p>
+                        <p className="text-xs text-muted-foreground">{s.registrationNumber}</p>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{s.region}</td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={s.status} />
+                      <td className="px-4 py-3 text-muted-foreground text-xs max-w-[180px] truncate">
+                        {s.address}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-medium">{s.alertsCount}</span>
-                        <span className="text-xs text-muted-foreground ml-1">
-                          ({s.foundedAlerts} fondées)
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.className}`}>
+                          {statusConfig.label}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Users className="w-3 h-3" /> {s._count.staffMembers}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Bell className="w-3 h-3" /> {s._count.alerts}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Heart className="w-3 h-3" /> {s._count.donations}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">
                         {formatDate(s.createdAt)}
@@ -87,16 +103,11 @@ export function StructuresTable() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <FileText className="mr-2 h-4 w-4" />
-                              Voir les documents
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
                             {s.status === "PENDING" && (
                               <>
                                 <DropdownMenuItem
                                   className="text-green-600"
-                                  onClick={() => validate.mutate(s.id)}
+                                  onClick={() => verify.mutate(s.id)}
                                 >
                                   <CheckCircle className="mr-2 h-4 w-4" />
                                   Certifier
@@ -110,53 +121,29 @@ export function StructuresTable() {
                                 </DropdownMenuItem>
                               </>
                             )}
-                            {s.status === "ACTIVE" && (
-                              <DropdownMenuItem
-                                className="text-amber-600"
-                                onClick={() => suspend.mutate({ id: s.id, reason: "Abus détecté" })}
-                              >
-                                <PauseCircle className="mr-2 h-4 w-4" />
-                                Suspendre
-                              </DropdownMenuItem>
+                            {s.status === "VERIFIED" && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-amber-600"
+                                  onClick={() => suspend.mutate({ id: s.id, reason: "Abus détecté" })}
+                                >
+                                  <PauseCircle className="mr-2 h-4 w-4" />
+                                  Suspendre
+                                </DropdownMenuItem>
+                              </>
                             )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Pagination */}
-      {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            Page {page} sur {data.totalPages} · {data.total} structures
-          </span>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Précédent
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === data.totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Suivant
-            </Button>
-          </div>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 }
