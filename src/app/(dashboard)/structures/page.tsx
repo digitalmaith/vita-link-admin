@@ -104,6 +104,8 @@ export default function StructuresPage() {
     <div className="space-y-6">
 
       {/* Header */}
+
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Structures de Santé</h2>
