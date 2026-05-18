@@ -13,7 +13,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { StructureStatusBadge } from "./StructureStatusBadge";
 import type { HealthStructure } from "@/services/structures.service";
 import { formatDate } from "@/lib/utils";
-import { cn } from "@/lib/utils";
 import {
   Building2, 
   MapPin, 

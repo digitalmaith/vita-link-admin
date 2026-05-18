@@ -7,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import type { Reward, Partner, CreateRewardPayload } from "@/services/rewards.service";
-import { REWARD_TYPES, REWARD_TYPE_CONFIG } from "./rewards.constants";
+import { REWARD_TYPES, REWARD_TYPE_CONFIG } from "../../lib/constants/rewards.constants";
 
 interface Props {
   open: boolean;
