@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { rewardsService, partnersService, type Reward } from "@/services/rewards.service";
+import { rewardsService, partnersService, type Reward, type CreateRewardPayload } from "@/services/rewards.service";
+import { RewardFormModal } from "./RewardFormModal";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,8 @@ import {
   DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  MoreHorizontal, Plus, Gift, Power,
-  PowerOff, Pencil, Package, Coins,
+  MoreHorizontal, Plus, Gift,
+  PowerOff, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
@@ -22,7 +23,8 @@ import { REWARD_TYPE_CONFIG } from "./rewards.constants";
 
 export function RewardsTab() {
   const queryClient = useQueryClient();
-  const [rewardToToggle, setRewardToToggle] = useState<Reward | null>(null);
+  const [rewardToDeactivate, setRewardToDeactivate] = useState<Reward | null>(null);
+  const [rewardToEdit, setRewardToEdit] = useState<Reward | null | undefined>(undefined);
   const [partnerFilter, setPartnerFilter] = useState<string>("ALL");
 
   const { data: rewardsData, isLoading } = useQuery({
@@ -35,14 +37,38 @@ export function RewardsTab() {
     queryFn: () => partnersService.getAll(),
   });
 
-  const toggle = useMutation({
-    mutationFn: (r: Reward) => rewardsService.toggle(r.id, !r.isActive),
-    onSuccess: (_, r) => {
+  const create = useMutation({
+  mutationFn: (data: CreateRewardPayload) => rewardsService.create(data),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["rewards"] });
+    toast.success("Récompense ajoutée avec succès");
+    setRewardToEdit(undefined);
+  },
+  onError: (error: any) => {
+    console.log("Erreur détaillée:", error);
+    toast.error(error?.message ?? "Erreur lors de l'ajout");
+  },
+});
+
+  const update = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<CreateRewardPayload> }) =>
+      rewardsService.update(id, data),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rewards"] });
-      toast.success(`Récompense ${r.isActive ? "désactivée" : "activée"}`);
-      setRewardToToggle(null);
+      toast.success("Récompense modifiée avec succès");
+      setRewardToEdit(undefined);
     },
-    onError: () => toast.error("Erreur lors de la mise à jour"),
+    onError: () => toast.error("Erreur lors de la modification"),
+  });
+
+  const deactivate = useMutation({
+    mutationFn: (id: string) => rewardsService.deactivate(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rewards"] });
+      toast.success("Récompense désactivée");
+      setRewardToDeactivate(null);
+    },
+    onError: () => toast.error("Erreur lors de la désactivation"),
   });
 
   const rewards = rewardsData?.rewards ?? [];
@@ -51,6 +77,14 @@ export function RewardsTab() {
   const filtered = partnerFilter === "ALL"
     ? rewards
     : rewards.filter((r) => r.partner.id === partnerFilter);
+
+  const handleSubmit = (data: CreateRewardPayload) => {
+    if (rewardToEdit) {
+      update.mutate({ id: rewardToEdit.id, data });
+    } else {
+      create.mutate(data);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -82,7 +116,7 @@ export function RewardsTab() {
           ))}
         </div>
 
-        <Button size="sm" className="gap-2 shrink-0">
+        <Button size="sm" className="gap-2 shrink-0" onClick={() => setRewardToEdit(null)}>
           <Plus className="w-4 h-4" />
           Ajouter une récompense
         </Button>
@@ -135,7 +169,7 @@ export function RewardsTab() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="flex items-center gap-1 text-sm font-semibold text-primary">
+                        <span className="text-sm font-semibold text-primary">
                           {r.pointsCost} pts
                         </span>
                       </td>
@@ -164,18 +198,17 @@ export function RewardsTab() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setRewardToEdit(r)}>
                               <Pencil className="mr-2 h-4 w-4" /> Modifier
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className={r.isActive ? "text-amber-600" : "text-green-600"}
-                              onClick={() => setRewardToToggle(r)}
-                            >
-                              {r.isActive
-                                ? <><PowerOff className="mr-2 h-4 w-4" /> Désactiver</>
-                                : <><Power className="mr-2 h-4 w-4" /> Activer</>
-                              }
-                            </DropdownMenuItem>
+                            {r.isActive && (
+                              <DropdownMenuItem
+                                className="text-amber-600"
+                                onClick={() => setRewardToDeactivate(r)}
+                              >
+                                <PowerOff className="mr-2 h-4 w-4" /> Désactiver
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -188,25 +221,27 @@ export function RewardsTab() {
         </Card>
       )}
 
+      {/* Modal ajout / modification */}
+      <RewardFormModal
+        open={rewardToEdit !== undefined}
+        reward={rewardToEdit}
+        partners={partners}
+        isLoading={create.isPending || update.isPending}
+        onClose={() => setRewardToEdit(undefined)}
+        onSubmit={handleSubmit}
+      />
+
+      {/* Modal confirmation désactivation */}
       <ConfirmModal
-        open={!!rewardToToggle}
-        variant={rewardToToggle?.isActive ? "warning" : "info"}
-        title={rewardToToggle?.isActive ? "Désactiver la récompense" : "Activer la récompense"}
-        description={
-          <span>
-            Vous êtes sur le point de{" "}
-            {rewardToToggle?.isActive ? "désactiver" : "activer"}{" "}
-            <span className="font-semibold text-foreground">
-              {rewardToToggle?.title}
-            </span>
-            .
-          </span>
-        }
-        confirmLabel={rewardToToggle?.isActive ? "Désactiver" : "Activer"}
-        isLoading={toggle.isPending}
-        onClose={() => setRewardToToggle(null)}
+        open={!!rewardToDeactivate}
+        variant="warning"
+        title="Désactiver la récompense"
+        description={`Vous êtes sur le point de désactiver "${rewardToDeactivate?.title}".`}
+        confirmLabel="Désactiver"
+        isLoading={deactivate.isPending}
+        onClose={() => setRewardToDeactivate(null)}
         onConfirm={() => {
-          if (rewardToToggle) toggle.mutate(rewardToToggle);
+          if (rewardToDeactivate) deactivate.mutate(rewardToDeactivate.id);
         }}
       />
     </div>
