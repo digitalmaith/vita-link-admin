@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PartnersTab } from "@/components/rewards/PartnersTab";
-import { BadgesTab } from "@/components/rewards/BadgesTab";
-
-export const metadata: Metadata = { title: "Récompenses" };
+import { RewardsTab } from "@/components/rewards/RewardsTab";
 
 export default function RewardsPage() {
   return (
@@ -11,20 +11,20 @@ export default function RewardsPage() {
       <div>
         <h2 className="text-xl font-semibold">Régie Jambaar Life</h2>
         <p className="text-sm text-muted-foreground">
-          Partenaires · Récompenses · Badges saisonniers
+          Partenaires · Récompenses
         </p>
       </div>
 
       <Tabs defaultValue="partners">
         <TabsList>
           <TabsTrigger value="partners">Partenaires</TabsTrigger>
-          <TabsTrigger value="badges">Badges & Défis</TabsTrigger>
+          <TabsTrigger value="rewards">Récompenses</TabsTrigger>
         </TabsList>
         <TabsContent value="partners" className="mt-4">
           <PartnersTab />
         </TabsContent>
-        <TabsContent value="badges" className="mt-4">
-          <BadgesTab />
+        <TabsContent value="rewards" className="mt-4">
+          <RewardsTab />
         </TabsContent>
       </Tabs>
     </div>
