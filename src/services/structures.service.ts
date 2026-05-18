@@ -40,11 +40,14 @@ export const structuresService = {
     api.get<{ success: boolean; structure: HealthStructure }>(`/health-structures/${id}`),
 
   verify: (id: string) =>
-    api.patch<{ success: boolean; structure: HealthStructure }>(`/health-structures/${id}/verify`),
+    api.patch<{ success: boolean; structure: HealthStructure }>(`/admin/health-structures/${id}/verify`),
 
   suspend: (id: string, reason: string) =>
-    api.patch<{ success: boolean; structure: HealthStructure }>(`/health-structures/${id}/suspend`, { reason }),
+    api.patch<{ success: boolean; structure: HealthStructure }>(`/admin/health-structures/${id}/suspend`, { reason }),
 
   reject: (id: string, reason: string) =>
-    api.patch<{ success: boolean; structure: HealthStructure }>(`/health-structures/${id}/reject`, { reason }),
+    api.patch<{ success: boolean; structure: HealthStructure }>(`/admin/health-structures/${id}/reject`, { reason }),
+
+  reactivate: (id: string) =>
+    api.patch<{ success: boolean; structure: HealthStructure }>(`/admin/health-structures/${id}/verify`),
 };

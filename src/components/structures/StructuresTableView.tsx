@@ -20,9 +20,10 @@ interface Props {
   onVerify: (id: string) => void;
   onSuspend: (id: string) => void;
   onReject: (id: string) => void;
+  onReactivate: (id: string) => void;
 }
 
-export function StructuresTableView({ structures, onSelect, onVerify, onSuspend, onReject }: Props) {
+export function StructuresTableView({ structures, onSelect, onVerify, onSuspend, onReject, onReactivate }: Props) {
   return (
     <Card>
       <CardContent className="p-0">
@@ -97,6 +98,11 @@ export function StructuresTableView({ structures, onSelect, onVerify, onSuspend,
                         {s.status === "VERIFIED" && (
                           <DropdownMenuItem className="text-amber-600" onClick={() => onSuspend(s.id)}>
                             <PauseCircle className="mr-2 h-4 w-4" /> Suspendre
+                          </DropdownMenuItem>
+                        )}
+                        {s.status === "SUSPENDED" && (
+                          <DropdownMenuItem className="text-blue-600" onClick={() => onReactivate(s.id)}>
+                            <CheckCircle className="mr-2 h-4 w-4" /> Réactiver
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
