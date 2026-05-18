@@ -1,50 +1,118 @@
-// =============================================
-// VITA-LINK ADMIN — Rewards Service
-// =============================================
-
 import { api } from "@/lib/api/client";
-import type { Partner, Reward, Badge, ApiResponse, PaginatedResponse } from "@/types";
 
-const PARTNERS_BASE = "/partners";
-const REWARDS_BASE = "/rewards";
-const BADGES_BASE = "/badges";
+// --- Types ---
+
+export interface PartnerManager {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface Partner {
+  id: string;
+  name: string;
+  description: string;
+  logoUrl: string;
+  websiteUrl: string;
+  isActive: boolean;
+  managedBy: PartnerManager;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PartnersResponse {
+  success: boolean;
+  partners: Partner[];
+}
+
+export interface RewardPartner {
+  id: string;
+  name: string;
+}
+
+export type RewardType =
+  | "DISCOUNT_COUPON"
+  | "FREE_PRODUCT"
+  | "CASHBACK"
+  | "GIFT_CARD"
+  | "OTHER";
+
+export interface Reward {
+  id: string;
+  title: string;
+  description: string;
+  pointsCost: number;
+  rewardType: RewardType;
+  isUnlimited: boolean;
+  expiresAt: string | null;
+  partner: RewardPartner;
+  stockQuantity: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RewardsResponse {
+  success: boolean;
+  rewards: Reward[];
+}
+
+export interface CreatePartnerPayload {
+  name: string;
+  description: string;
+  logoUrl?: string;
+  websiteUrl?: string;
+}
+
+export interface CreateRewardPayload {
+  partnerId: string;
+  title: string;
+  description: string;
+  pointsCost: number;
+  rewardType: RewardType;
+  stockQuantity: number;
+  isUnlimited: boolean;
+  expiresAt?: string;
+}
+
+// --- Service ---
+
+export const partnersService = {
+  getAll: () =>
+    api.get<PartnersResponse>("/partners"),
+
+  getById: (id: string) =>
+    api.get<{ success: boolean; partner: Partner }>(`/partners/${id}`),
+
+  create: (formData: FormData) =>
+  api.post<{ success: boolean; partner: Partner }>("/partners", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }),
+
+  update: (id: string, formData: FormData) =>
+    api.patch<{ success: boolean; partner: Partner }>(`/partners/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+
+  deactivate: (id: string) =>
+  api.delete<{ success: boolean; partner: Partner }>(`/partners/${id}`),
+};
 
 export const rewardsService = {
-  // --- Partenaires ---
-  getPartners: (page = 1, limit = 20) =>
-    api.get<PaginatedResponse<Partner>>(PARTNERS_BASE, { params: { page, limit } }),
-
-  createPartner: (data: Omit<Partner, "id" | "createdAt" | "rewards">) =>
-    api.post<ApiResponse<Partner>>(PARTNERS_BASE, data),
-
-  updatePartner: (id: string, data: Partial<Partner>) =>
-    api.patch<ApiResponse<Partner>>(`${PARTNERS_BASE}/${id}`, data),
-
-  togglePartner: (id: string, isActive: boolean) =>
-    api.patch<ApiResponse<Partner>>(`${PARTNERS_BASE}/${id}/toggle`, { isActive }),
-
-  // --- Récompenses ---
-  getRewards: (partnerId?: string) =>
-    api.get<PaginatedResponse<Reward>>(REWARDS_BASE, {
+  getAll: (partnerId?: string) =>
+    api.get<RewardsResponse>("/rewards", {
       params: partnerId ? { partnerId } : {},
     }),
 
-  createReward: (data: Omit<Reward, "id">) =>
-    api.post<ApiResponse<Reward>>(REWARDS_BASE, data),
+  create: (data: CreateRewardPayload) =>
+    api.post<{ success: boolean; reward: Reward }>("/rewards", data),
 
-  updateReward: (id: string, data: Partial<Reward>) =>
-    api.patch<ApiResponse<Reward>>(`${REWARDS_BASE}/${id}`, data),
+  update: (id: string, data: Partial<CreateRewardPayload>) =>
+    api.patch<{ success: boolean; reward: Reward }>(`/rewards/${id}`, data),
 
-  updatePointsCost: (id: string, pointsCost: number) =>
-    api.patch<ApiResponse<Reward>>(`${REWARDS_BASE}/${id}/points`, { pointsCost }),
+  toggle: (id: string, isActive: boolean) =>
+    api.patch<{ success: boolean; reward: Reward }>(`/rewards/${id}`, { isActive }),
 
-  // --- Badges ---
-  getBadges: () =>
-    api.get<PaginatedResponse<Badge>>(BADGES_BASE),
-
-  createBadge: (data: Omit<Badge, "id" | "awardedCount">) =>
-    api.post<ApiResponse<Badge>>(BADGES_BASE, data),
-
-  toggleBadge: (id: string, isActive: boolean) =>
-    api.patch<ApiResponse<Badge>>(`${BADGES_BASE}/${id}/toggle`, { isActive }),
+  updateStock: (id: string, stockQuantity: number) =>
+    api.patch<{ success: boolean; reward: Reward }>(`/rewards/${id}`, { stockQuantity }),
 };
