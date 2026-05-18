@@ -84,11 +84,15 @@ export const partnersService = {
   getById: (id: string) =>
     api.get<{ success: boolean; partner: Partner }>(`/partners/${id}`),
 
-  create: (data: CreatePartnerPayload) =>
-    api.post<{ success: boolean; partner: Partner }>("/partners", data),
+  create: (formData: FormData) =>
+  api.post<{ success: boolean; partner: Partner }>("/partners", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }),
 
-  update: (id: string, data: Partial<CreatePartnerPayload>) =>
-    api.patch<{ success: boolean; partner: Partner }>(`/partners/${id}`, data),
+  update: (id: string, formData: FormData) =>
+    api.patch<{ success: boolean; partner: Partner }>(`/partners/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
 
   toggle: (id: string, isActive: boolean) =>
     api.patch<{ success: boolean; partner: Partner }>(`/partners/${id}`, { isActive }),
