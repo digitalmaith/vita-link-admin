@@ -32,11 +32,11 @@ export interface RewardPartner {
 
 export type RewardType =
   | "DISCOUNT_COUPON"
-  | "FREE_PRODUCT"
-  | "CASHBACK"
-  | "GIFT_CARD"
+  | "TRANSPORT_TICKET"
+  | "HEALTH_CHECKUP"
+  | "DATA_BUNDLE"
   | "OTHER";
-
+  
 export interface Reward {
   id: string;
   title: string;
@@ -110,9 +110,6 @@ export const rewardsService = {
   update: (id: string, data: Partial<CreateRewardPayload>) =>
     api.patch<{ success: boolean; reward: Reward }>(`/rewards/${id}`, data),
 
-  toggle: (id: string, isActive: boolean) =>
-    api.patch<{ success: boolean; reward: Reward }>(`/rewards/${id}`, { isActive }),
-
-  updateStock: (id: string, stockQuantity: number) =>
-    api.patch<{ success: boolean; reward: Reward }>(`/rewards/${id}`, { stockQuantity }),
+  deactivate: (id: string) =>
+    api.delete<{ success: boolean; reward: Reward }>(`/rewards/${id}`),
 };
