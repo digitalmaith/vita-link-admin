@@ -94,8 +94,8 @@ export const partnersService = {
       headers: { "Content-Type": "multipart/form-data" },
     }),
 
-  toggle: (id: string, isActive: boolean) =>
-    api.patch<{ success: boolean; partner: Partner }>(`/partners/${id}`, { isActive }),
+  deactivate: (id: string) =>
+  api.delete<{ success: boolean; partner: Partner }>(`/partners/${id}`),
 };
 
 export const rewardsService = {

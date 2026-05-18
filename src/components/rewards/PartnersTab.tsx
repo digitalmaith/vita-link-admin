@@ -44,13 +44,13 @@ export function PartnersTab() {
   });
 
   const toggle = useMutation({
-    mutationFn: (p: Partner) => partnersService.toggle(p.id, !p.isActive),
+    mutationFn: (p: Partner) => partnersService.deactivate(p.id),
     onSuccess: (_, p) => {
       queryClient.invalidateQueries({ queryKey: ["partners"] });
-      toast.success(`Partenaire ${p.isActive ? "désactivé" : "activé"}`);
+      toast.success(`Partenaire désactivé`);
       setPartnerToToggle(null);
     },
-    onError: () => toast.error("Erreur lors de la mise à jour"),
+    onError: () => toast.error("Erreur lors de la désactivation"),
   });
 
   const partners = data?.partners ?? [];
