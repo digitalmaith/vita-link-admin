@@ -5,7 +5,6 @@ import { useStructures, useVerifyStructure, useSuspendStructure, useRejectStruct
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -13,13 +12,7 @@ import {
 import { MoreHorizontal, CheckCircle, XCircle, PauseCircle, Users, Bell, Heart } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import type { HealthStructure } from "@/services/structures.service";
-
-const STATUS_CONFIG = {
-  VERIFIED: { label: "Certifiée", className: "bg-green-100 text-green-700" },
-  PENDING: { label: "En attente", className: "bg-amber-100 text-amber-700" },
-  SUSPENDED: { label: "Suspendue", className: "bg-red-100 text-red-700" },
-  REJECTED: { label: "Rejetée", className: "bg-gray-100 text-gray-600" },
-};
+import { STATUS_CONFIG } from "@/lib/constants/structures.constants";
 
 export function StructuresTable() {
   const { data, isLoading } = useStructures();

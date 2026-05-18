@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, cn } from "@/lib/utils";
-import { REWARD_TYPE_CONFIG } from "./rewards.constants";
+import { REWARD_TYPE_CONFIG } from "../../lib/constants/rewards.constants";
 import { Input } from "@/components/ui/input";
 
 export function RewardsTab() {
