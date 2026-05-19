@@ -177,6 +177,8 @@ export interface DashboardKPIs {
   totalDonors: number;
   openAlerts: number;
   totalStructures: number;
+  totalDonations?: number;
+  totalAlerts?: number;
 }
 
 export interface HeatmapPoint {

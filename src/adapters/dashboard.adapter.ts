@@ -9,6 +9,8 @@ export type DashboardUIKPIs = {
   criticalRegions: number;
   donors: number;
   structures: number;
+  totalDonations?: number;
+  totalAlerts?: number;
 };
 
 export function adaptDashboardKPIs(
