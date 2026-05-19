@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { jambaarService } from "@/services/jambaars.service";
 import { useFiltersStore } from "@/store/filters.store";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -15,47 +16,44 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PauseCircle, CheckCircle, Eye, Star } from "lucide-react";
-import { SuspensionModal } from "./SuspensionModal";
-import { PointsAdjustmentModal } from "./PointsAdjustmentModal";
-import { JambaarDetailsSheet } from "./JambaarDetailsSheet";
-import { getInitials, formatDate } from "@/lib/utils";
+import { MoreHorizontal, PauseCircle, CheckCircle } from "lucide-react";
+import { getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Jambaar } from "@/types";
 
-const GRADE_LABELS: Record<string, string> = {
+const GRADE_EMOJIS: Record<Jambaar["grade"], string> = {
   ASPIRANT: "🩸 Aspirant",
-  SENTINELLE: "🛡️ Sentinelle",
+  SENTINELLE: "⚔️ Sentinelle",
   AMBASSADEUR: "🌟 Ambassadeur",
-  // Fallbacks
-  RECRUE: "🩸 Recrue",
-  JAMBAAR: "⚔️ Jambaar",
-  JAMBAAR_ELITE: "🌟 Élite",
-  CHAMPION: "🏆 Champion",
 };
 
 export function JambaarDirectory() {
   const [page, setPage] = useState(1);
   const { filters } = useFiltersStore();
   const queryClient = useQueryClient();
+  const { status: sessionStatus } = useSession();
 
-  const [selectedJambaar, setSelectedJambaar] = useState<Jambaar | null>(null);
-  const [isSuspendOpen, setIsSuspendOpen] = useState(false);
-  const [isPointsOpen, setIsPointsOpen] = useState(false);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["jambaars", filters, page],
     queryFn: () =>
       jambaarService.getAll(
-        { 
-          bloodGroup: filters.bloodGroup, 
+        {
+          bloodGroup: filters.bloodGroup,
           region: filters.region,
-          search: filters.search,
-          grade: filters.grade
         },
         page
       ),
+    enabled: sessionStatus === "authenticated",
+  });
+
+  const suspend = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      jambaarService.suspend(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jambaars"] });
+      toast.success("Jambaar suspendu");
+    },
+    onError: () => toast.error("Erreur lors de la suspension"),
   });
 
   const reactivate = useMutation({
@@ -64,14 +62,23 @@ export function JambaarDirectory() {
       queryClient.invalidateQueries({ queryKey: ["jambaars"] });
       toast.success("Jambaar réactivé");
     },
+    onError: () => toast.error("Erreur lors de la réactivation"),
   });
 
-  if (isLoading) {
+  if (sessionStatus === "loading" || isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-36 rounded-lg" />
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-10 text-center text-sm text-destructive">
+        Une erreur est survenue lors du chargement des Jambaars.
       </div>
     );
   }
@@ -87,28 +94,28 @@ export function JambaarDirectory() {
           </p>
         ) : (
           jambaars.map((j) => (
-            <Card 
-              key={j.id} 
-              className="group overflow-hidden relative hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-border/50 hover:border-primary/30 bg-gradient-to-b from-card to-card/50"
-            >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/50 to-rose-400/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <CardContent className="p-5">
+            <Card key={j.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-12 w-12 border-2 border-background shadow-sm group-hover:scale-105 transition-transform duration-300">
-                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 text-primary text-sm font-bold">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
                         {getInitials(`${j.firstName} ${j.lastName}`)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-bold text-base group-hover:text-primary transition-colors">
+                      <p className="font-semibold text-sm">
                         {j.firstName} {j.lastName}
                       </p>
-                      <p className="text-xs font-medium text-muted-foreground/80 mt-0.5">
-                        {GRADE_LABELS[j.grade]}
+                      <p className="text-xs text-muted-foreground">
+                        {GRADE_EMOJIS[j.grade]}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {j.email}
                       </p>
                     </div>
                   </div>
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -116,32 +123,12 @@ export function JambaarDirectory() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setSelectedJambaar(j);
-                          setIsDetailsOpen(true);
-                        }}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        Voir détails
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setSelectedJambaar(j);
-                          setIsPointsOpen(true);
-                        }}
-                      >
-                        <Star className="mr-2 h-4 w-4" />
-                        Ajuster les points
-                      </DropdownMenuItem>
-                      
                       {j.status === "ACTIVE" ? (
                         <DropdownMenuItem
                           className="text-amber-600"
-                          onClick={() => {
-                            setSelectedJambaar(j);
-                            setIsSuspendOpen(true);
-                          }}
+                          onClick={() =>
+                            suspend.mutate({ id: j.id, reason: "Absence répétée" })
+                          }
                         >
                           <PauseCircle className="mr-2 h-4 w-4" />
                           Suspendre
@@ -159,24 +146,35 @@ export function JambaarDirectory() {
                   </DropdownMenu>
                 </div>
 
-                <div className="mt-5 grid grid-cols-3 gap-3 text-center">
-                  <div className="bg-primary/5 hover:bg-primary/10 transition-colors rounded-xl py-2 px-1 border border-primary/10">
-                    <p className="text-[10px] uppercase font-semibold text-primary/70 tracking-wider mb-1">Groupe</p>
-                    <p className="text-lg font-black text-primary">{j.bloodGroup}</p>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-muted/50 rounded-md py-1.5">
+                    <p className="text-xs text-muted-foreground">Groupe</p>
+                    <p className="text-sm font-bold text-primary">{j.bloodGroup}</p>
                   </div>
-                  <div className="bg-muted/40 hover:bg-muted/60 transition-colors rounded-xl py-2 px-1 border border-border/50">
-                    <p className="text-[10px] uppercase font-semibold text-muted-foreground/70 tracking-wider mb-1">Dons</p>
-                    <p className="text-lg font-bold">{j.totalDonations}</p>
+                  <div className="bg-muted/50 rounded-md py-1.5">
+                    <p className="text-xs text-muted-foreground">Dons</p>
+                    <p className="text-sm font-bold">{j.totalDonations}</p>
                   </div>
-                  <div className="bg-muted/40 hover:bg-muted/60 transition-colors rounded-xl py-2 px-1 border border-border/50">
-                    <p className="text-[10px] uppercase font-semibold text-muted-foreground/70 tracking-wider mb-1">Présence</p>
-                    <p className="text-lg font-bold">{j.commitmentRate}%</p>
+                  <div className="bg-muted/50 rounded-md py-1.5">
+                    <p className="text-xs text-muted-foreground">Présence</p>
+                    <p className="text-sm font-bold">{j.commitmentRate}%</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+                  <div className="bg-muted/50 rounded-md py-1.5">
+                    <p className="text-xs text-muted-foreground">Points</p>
+                    <p className="text-sm font-bold">{j.points}</p>
+                  </div>
+                  <div className="bg-muted/50 rounded-md py-1.5">
+                    <p className="text-xs text-muted-foreground">Téléphone</p>
+                    <p className="text-sm font-bold">{j.phone}</p>
                   </div>
                 </div>
 
                 <div className="mt-3 flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">
-                    {j.region} · {j.city}
+                    {j.city !== "—" ? j.city : "Ville non renseignée"}
                   </span>
                   <StatusBadge status={j.status} />
                 </div>
@@ -188,34 +186,29 @@ export function JambaarDirectory() {
 
       {data && data.totalPages > 1 && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Page {page} sur {data.totalPages} · {data.total} Jambaars</span>
+          <span>
+            Page {page} sur {data.totalPages} · {data.total} Jambaars
+          </span>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
               Précédent
             </Button>
-            <Button variant="outline" size="sm" disabled={page === data.totalPages} onClick={() => setPage((p) => p + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === data.totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
               Suivant
             </Button>
           </div>
         </div>
       )}
-
-      {/* Modals & Sheets */}
-      <SuspensionModal
-        jambaar={selectedJambaar}
-        isOpen={isSuspendOpen}
-        onClose={() => setIsSuspendOpen(false)}
-      />
-      <PointsAdjustmentModal
-        jambaar={selectedJambaar}
-        isOpen={isPointsOpen}
-        onClose={() => setIsPointsOpen(false)}
-      />
-      <JambaarDetailsSheet
-        jambaar={selectedJambaar}
-        isOpen={isDetailsOpen}
-        onClose={() => setIsDetailsOpen(false)}
-      />
     </div>
   );
 }

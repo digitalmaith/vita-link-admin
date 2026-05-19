@@ -3,11 +3,6 @@
 // =============================================
 
 import { api } from "@/lib/api/client";
-import {
-  MOCK_JAMBAARS,
-  MOCK_DONATION_HISTORY,
-  paginateMock,
-} from "@/lib/mock/jambaars.mock";
 import type {
   Jambaar,
   ApiResponse,
@@ -25,137 +20,123 @@ export interface JambaarFilters {
   search?: string;
 }
 
-// ⚙️  Mettre USE_MOCK=true pour utiliser les données locales
-//     quand le backend n'est pas encore déployé.
-const USE_MOCK = true;
+interface RawJambaarUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  role: string;
+  bloodType: string;
+  isActive: boolean;
+  isAvailable: boolean;
+  createdAt: string;
+  jambaarsProfile: {
+    totalPoints: number;
+    currentGrade: string;
+    donationCount: number;
+    noShowCount: number;
+    city: string | null;
+  };
+}
 
-// Délai simulé pour imiter un vrai appel réseau (ms)
-const MOCK_DELAY = 400;
+interface RawApiResponse {
+  success: boolean;
+  users: RawJambaarUser[];
+  total: number;
+}
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// "O-" → "O_NEG" | "A+" → "A_POS"
+function serializeBloodGroup(bg: BloodGroup): string {
+  return bg.replace("+", "_POS").replace("-", "_NEG");
+}
 
-const BASE = "/users"; // endpoint backend réel
+// "O_NEG" → "O-" | "A_POS" → "A+"
+function parseBloodType(raw: string): Jambaar["bloodGroup"] {
+  return raw.replace("_POS", "+").replace("_NEG", "-") as Jambaar["bloodGroup"];
+}
+
+const GRADE_MAP: Record<string, Jambaar["grade"]> = {
+  ASPIRANT: "ASPIRANT",
+  SENTINELLE: "SENTINELLE",
+  AMBASSADEUR: "AMBASSADEUR",
+
+};
+
+function mapUser(u: RawJambaarUser): Jambaar {
+  const totalDonations = u.jambaarsProfile?.donationCount ?? 0;
+  const noShow = u.jambaarsProfile?.noShowCount ?? 0;
+  const total = totalDonations + noShow;
+
+  return {
+    id: u.id,
+    firstName: u.firstName,
+    lastName: u.lastName,
+    email: u.email,
+    phone: u.phone,
+    bloodGroup: parseBloodType(u.bloodType),
+    region: "Dakar",
+    city: u.jambaarsProfile?.city ?? "—",
+    grade: GRADE_MAP[u.jambaarsProfile?.currentGrade] ?? "ASPIRANT",
+    status: u.isActive ? "ACTIVE" : "SUSPENDED",
+    points: u.jambaarsProfile?.totalPoints ?? 0,
+    totalDonations,
+    commitmentRate: total > 0 ? Math.round((totalDonations / total) * 100) : 0,
+    createdAt: u.createdAt,
+  };
+}
+
+const BASE = "/admin/users";
 
 export const jambaarService = {
   getAll: async (
-    filters?: JambaarFilters & { sort?: string; limit?: number },
+    filters?: JambaarFilters,
     page = 1,
     limit = 20
   ): Promise<PaginatedResponse<Jambaar>> => {
-    if (USE_MOCK) {
-      await sleep(MOCK_DELAY);
-      let results = [...MOCK_JAMBAARS];
+    const params: Record<string, unknown> = {
+      role: "DONOR",
+      page,
+      limit,
+    };
 
-      // Appliquer les filtres
-      if (filters?.search) {
-        const q = filters.search.toLowerCase();
-        results = results.filter(
-          (j) =>
-            j.firstName.toLowerCase().includes(q) ||
-            j.lastName.toLowerCase().includes(q) ||
-            j.phone.includes(q) ||
-            j.email?.toLowerCase().includes(q)
-        );
-      }
-      if (filters?.bloodGroup) {
-        results = results.filter((j) => j.bloodGroup === filters.bloodGroup);
-      }
-      if (filters?.region) {
-        results = results.filter((j) => j.region === filters.region);
-      }
-      if (filters?.status) {
-        results = results.filter((j) => j.status === filters.status);
-      }
-      if (filters?.grade) {
-        results = results.filter((j) => j.grade === filters.grade);
-      }
-
-      // Trier par points si demandé
-      if (filters?.sort === "points") {
-        results.sort((a, b) => b.points - a.points);
-      }
-
-      const pageLimit = filters?.limit ?? limit;
-      return paginateMock(results, page, pageLimit);
+    if (filters?.bloodGroup) {
+      params.bloodType = serializeBloodGroup(filters.bloodGroup); 
     }
+    if (filters?.region)    params.region = filters.region;
+    if (filters?.status)    params.status = filters.status;
+    if (filters?.search)    params.search = filters.search;
+    if (filters?.grade)     params.grade  = filters.grade;
 
-    // --- Appel réel backend ---
-    return api.get<PaginatedResponse<Jambaar>>(BASE, {
-      params: {
-        ...filters,
-        page,
-        limit,
-      },
-    });
+    const raw = await api.get<RawApiResponse>(BASE, { params });
+
+    return {
+      data: raw.users.map(mapUser),
+      total: raw.total,
+      page,
+      limit,
+      totalPages: Math.ceil(raw.total / limit),
+    };
   },
 
-  getById: async (id: string): Promise<ApiResponse<Jambaar>> => {
-    if (USE_MOCK) {
-      await sleep(MOCK_DELAY);
-      const jambaar = MOCK_JAMBAARS.find((j) => j.id === id);
-      if (!jambaar) throw new Error("Jambaar introuvable");
-      return { data: jambaar, success: true };
-    }
-    return api.get<ApiResponse<Jambaar>>(`${BASE}/${id}`);
-  },
+  getById: (id: string) =>
+    api.get<ApiResponse<Jambaar>>(`${BASE}/${id}`),
 
-  suspend: async (
-    id: string,
-    reason: string,
-    durationDays?: number
-  ): Promise<ApiResponse<Jambaar>> => {
-    if (USE_MOCK) {
-      await sleep(MOCK_DELAY);
-      const jambaar = MOCK_JAMBAARS.find((j) => j.id === id);
-      if (!jambaar) throw new Error("Jambaar introuvable");
-      jambaar.status = "SUSPENDED";
-      return { data: jambaar, success: true, message: "Jambaar suspendu avec succès" };
-    }
-    return api.patch<ApiResponse<Jambaar>>(`${BASE}/${id}/suspend`, {
+  suspend: (id: string, reason: string, durationDays?: number) =>
+    api.patch<ApiResponse<Jambaar>>(`${BASE}/${id}/suspend`, {
       reason,
       durationDays,
-    });
-  },
+    }),
 
-  reactivate: async (id: string): Promise<ApiResponse<Jambaar>> => {
-    if (USE_MOCK) {
-      await sleep(MOCK_DELAY);
-      const jambaar = MOCK_JAMBAARS.find((j) => j.id === id);
-      if (!jambaar) throw new Error("Jambaar introuvable");
-      jambaar.status = "ACTIVE";
-      return { data: jambaar, success: true, message: "Jambaar réactivé avec succès" };
-    }
-    return api.patch<ApiResponse<Jambaar>>(`${BASE}/${id}/reactivate`);
-  },
+  reactivate: (id: string) =>
+    api.patch<ApiResponse<Jambaar>>(`${BASE}/${id}/reactivate`),
 
-  adjustPoints: async (
-    id: string,
-    points: number,
-    reason: string
-  ): Promise<ApiResponse<Jambaar>> => {
-    if (USE_MOCK) {
-      await sleep(MOCK_DELAY);
-      const jambaar = MOCK_JAMBAARS.find((j) => j.id === id);
-      if (!jambaar) throw new Error("Jambaar introuvable");
-      jambaar.points = Math.max(0, jambaar.points + points);
-      // Recalculer le grade selon les points
-      if (jambaar.points >= 1500) jambaar.grade = "AMBASSADEUR";
-      else if (jambaar.points >= 600) jambaar.grade = "SENTINELLE";
-      else jambaar.grade = "ASPIRANT";
-      return { data: jambaar, success: true, message: `Points ajustés : ${points > 0 ? "+" : ""}${points} pts` };
-    }
-    return api.patch<ApiResponse<Jambaar>>(`${BASE}/${id}/points`, {
+  adjustPoints: (id: string, points: number, reason: string) =>
+    api.patch<ApiResponse<Jambaar>>(`${BASE}/${id}/points`, {
       points,
       reason,
-    });
-  },
+    }),
 
-  getDonationHistory: async (id: string) => {
-    if (USE_MOCK) {
-      await sleep(MOCK_DELAY);
-      const history = MOCK_DONATION_HISTORY[id] ?? [];
-      return { data: history, success: true };
-    }
-    return api.get(`${BASE}/${id}/donations`);
-  },
+  getDonationHistory: (id: string) =>
+    api.get(`${BASE}/${id}/donations`),
 };

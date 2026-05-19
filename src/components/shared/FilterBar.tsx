@@ -23,6 +23,7 @@ interface FilterBarProps {
   showGrade?: boolean;
 }
 
+
 export function FilterBar({
   showRegion = false,
   showBloodGroup = false,
