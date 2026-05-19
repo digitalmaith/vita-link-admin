@@ -1,5 +1,6 @@
 import { RegionHeatmap } from "@/components/dashboard/RegionHeatmap";
 import { FilterBar } from "@/components/shared/FilterBar";
+import { AlertsPanel } from "../AlertsPanel";
 
 export function HeatmapAndFiltersSection() {
   return (
@@ -7,8 +8,8 @@ export function HeatmapAndFiltersSection() {
       <div className="xl:col-span-2">
         <RegionHeatmap />
       </div>
-      <div className="space-y-6">
-        <FilterBar showRegion showDateRange />
+      <div>
+        <AlertsPanel />
       </div>
     </div>
   );

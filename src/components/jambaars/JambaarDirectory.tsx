@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { jambaarService } from "@/services/jambaars.service";
 import { useFiltersStore } from "@/store/filters.store";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -16,29 +17,33 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, PauseCircle, CheckCircle } from "lucide-react";
-import { getInitials, formatDate } from "@/lib/utils";
+import { getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Jambaar } from "@/types";
 
-const GRADE_LABELS: Record<Jambaar["grade"], string> = {
-  RECRUE: "🩸 Recrue",
-  JAMBAAR: "⚔️ Jambaar",
-  JAMBAAR_ELITE: "🌟 Élite",
-  CHAMPION: "🏆 Champion",
+const GRADE_EMOJIS: Record<Jambaar["grade"], string> = {
+  ASPIRANT: "🩸 Aspirant",
+  SENTINELLE: "⚔️ Sentinelle",
+  AMBASSADEUR: "🌟 Ambassadeur",
 };
 
 export function JambaarDirectory() {
   const [page, setPage] = useState(1);
   const { filters } = useFiltersStore();
   const queryClient = useQueryClient();
+  const { status: sessionStatus } = useSession();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["jambaars", filters, page],
     queryFn: () =>
       jambaarService.getAll(
-        { bloodGroup: filters.bloodGroup, region: filters.region },
+        {
+          bloodGroup: filters.bloodGroup,
+          region: filters.region,
+        },
         page
       ),
+    enabled: sessionStatus === "authenticated",
   });
 
   const suspend = useMutation({
@@ -48,6 +53,7 @@ export function JambaarDirectory() {
       queryClient.invalidateQueries({ queryKey: ["jambaars"] });
       toast.success("Jambaar suspendu");
     },
+    onError: () => toast.error("Erreur lors de la suspension"),
   });
 
   const reactivate = useMutation({
@@ -56,14 +62,23 @@ export function JambaarDirectory() {
       queryClient.invalidateQueries({ queryKey: ["jambaars"] });
       toast.success("Jambaar réactivé");
     },
+    onError: () => toast.error("Erreur lors de la réactivation"),
   });
 
-  if (isLoading) {
+  if (sessionStatus === "loading" || isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-36 rounded-lg" />
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-10 text-center text-sm text-destructive">
+        Une erreur est survenue lors du chargement des Jambaars.
       </div>
     );
   }
@@ -93,10 +108,14 @@ export function JambaarDirectory() {
                         {j.firstName} {j.lastName}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {GRADE_LABELS[j.grade]}
+                        {GRADE_EMOJIS[j.grade]}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {j.email}
                       </p>
                     </div>
                   </div>
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -142,9 +161,20 @@ export function JambaarDirectory() {
                   </div>
                 </div>
 
+                <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+                  <div className="bg-muted/50 rounded-md py-1.5">
+                    <p className="text-xs text-muted-foreground">Points</p>
+                    <p className="text-sm font-bold">{j.points}</p>
+                  </div>
+                  <div className="bg-muted/50 rounded-md py-1.5">
+                    <p className="text-xs text-muted-foreground">Téléphone</p>
+                    <p className="text-sm font-bold">{j.phone}</p>
+                  </div>
+                </div>
+
                 <div className="mt-3 flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">
-                    {j.region} · {j.city}
+                    {j.city !== "—" ? j.city : "Ville non renseignée"}
                   </span>
                   <StatusBadge status={j.status} />
                 </div>
@@ -156,12 +186,24 @@ export function JambaarDirectory() {
 
       {data && data.totalPages > 1 && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Page {page} sur {data.totalPages} · {data.total} Jambaars</span>
+          <span>
+            Page {page} sur {data.totalPages} · {data.total} Jambaars
+          </span>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
               Précédent
             </Button>
-            <Button variant="outline" size="sm" disabled={page === data.totalPages} onClick={() => setPage((p) => p + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === data.totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
               Suivant
             </Button>
           </div>

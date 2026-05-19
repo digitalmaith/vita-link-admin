@@ -5,5 +5,6 @@ export function useDashboardKPIs() {
   return useQuery({
     queryKey: ["dashboard", "kpis"],
     queryFn: dashboardService.getKPIs,
+    refetchInterval: 60 * 1000,
   });
 }

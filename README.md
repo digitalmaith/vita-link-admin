@@ -259,3 +259,38 @@ git push origin feat/dashboard-heatmap
 ---
 
 *Vita-Link Admin — "Voir l'invisible : le mouvement du sang dans tout le pays en temps réel."*
+
+
+
+Mise en place du module JAMBAARS
+
+
+Pour la partie Jambaars (qui représente les donneurs dans Vita-Link), nous avons développé un module complet de modération et de gamification appelé "Jambaar Life". L'objectif était de vous donner les outils nécessaires pour gérer la communauté tout en stimulant l'engagement des donneurs.
+
+Voici concrètement ce qui a été mis en place :
+
+1. Annuaire des Jambaars (JambaarDirectory.tsx)
+C'est la vue principale qui liste tous les donneurs inscrits.
+
+Filtres avancés : Vous pouvez rechercher un donneur par son nom ou téléphone, et filtrer la liste par groupe sanguin, région, grade (Aspirant, Sentinelle, Ambassadeur) ou statut de compte (Actif, Suspendu, etc.).
+Aperçu rapide : Le tableau affiche immédiatement les statistiques vitales de chaque donneur, comme son nombre total de dons, ses points actuels et son taux d'engagement (pourcentage de présence après avoir répondu "J'y vais" à une alerte).
+2. Fiche Détaillée du Donneur (JambaarDetailsSheet.tsx)
+En cliquant sur un donneur, un panneau latéral s'ouvre avec son profil complet.
+
+Statistiques complètes : Visualisation de son historique de dons, son grade actuel et la progression vers le grade suivant.
+Vitrine de Badges : Affichage des badges (récompenses) que le donneur a débloqués grâce à ses actions.
+Historique : Un suivi des dernières alertes auxquelles il a répondu.
+3. Outils de Modération (SuspensionModal.tsx)
+Pour maintenir la fiabilité de la plateforme, nous avons intégré un système de suspension.
+
+Vous pouvez suspendre temporairement ou définitivement un Jambaar (par exemple, s'il a un taux d'engagement trop faible ou un comportement inapproprié).
+La modale exige de sélectionner un motif clair et permet d'ajouter un commentaire interne.
+4. Gestion de la Gamification (PointsAdjustmentModal.tsx)
+C'est le cœur du système "Jambaar Life" côté administrateur.
+
+Ajustement manuel : Vous pouvez créditer ou débiter manuellement des points au solde d'un donneur.
+Cas d'usage : Cela est très utile pour récompenser un donneur lors d'une campagne de don physique non gérée par l'app, ou pour corriger une erreur.
+5. Classement Régional / Leaderboard (Leaderboard.tsx)
+Un tableau de bord mettant en lumière les "Top Jambaars" par région, basé sur leurs points ou leur nombre de dons.
+Cela permet aux administrateurs d'identifier facilement les ambassadeurs de la communauté locale pour d'éventuelles récompenses spéciales ou partenariats.
+En résumé, ce module vous donne un contrôle total sur la base des donneurs, avec les outils nécessaires pour les modérer si besoin, mais surtout pour valoriser et récompenser leur engagement civique.
