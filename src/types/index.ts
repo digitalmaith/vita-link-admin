@@ -113,7 +113,7 @@ export interface Jambaar {
   lastDonationAt?: string;
 }
 
-export type JambaarGrade = "RECRUE" | "JAMBAAR" | "JAMBAAR_ELITE" | "CHAMPION";
+export type JambaarGrade = "ASPIRANT" | "SENTINELLE" | "AMBASSADEUR";
 
 // --- Alertes ---
 
@@ -192,6 +192,7 @@ export interface HeatmapPoint {
 export interface GlobalFilters {
   region?: Region;
   bloodGroup?: BloodGroup;
+  grade?: JambaarGrade;
   dateFrom?: string;
   dateTo?: string;
   status?: Status;

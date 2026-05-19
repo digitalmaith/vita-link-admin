@@ -1,0 +1,32 @@
+export const BADGES = [
+  {
+    id: "badge_1",
+    name: "Réactif",
+    description: "A répondu et effectué un don en moins d'une heure après l'alerte.",
+    icon: "⚡",
+    criteria: "RESPONSE_TIME_UNDER_1H",
+    isSeasonal: false,
+    isActive: true,
+    awardedCount: 124,
+  },
+  {
+    id: "badge_2",
+    name: "Régulier",
+    description: "A effectué au moins 3 dons au cours de la même année.",
+    icon: "🔁",
+    criteria: "DONATIONS_3_PER_YEAR",
+    isSeasonal: false,
+    isActive: true,
+    awardedCount: 89,
+  },
+  {
+    id: "badge_3",
+    name: "Sauveur",
+    description: "Possède un groupe sanguin rare et a répondu à une urgence vitale.",
+    icon: "🦸",
+    criteria: "RARE_BLOOD_GROUP_DONATION",
+    isSeasonal: false,
+    isActive: true,
+    awardedCount: 42,
+  },
+];
