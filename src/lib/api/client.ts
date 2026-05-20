@@ -2,8 +2,10 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
 import { getSession } from "next-auth/react";
 import type { ApiError } from "@/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://vita-link-api.onrender.com/api";
-
+const BASE_URL = typeof window !== "undefined"
+  ? "/api/proxy"  // côté client → passe par le proxy Next.js
+  : process.env.NEXT_PUBLIC_API_URL ?? "https://vita-link-api.onrender.com/api"; 
+  
 const httpClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
