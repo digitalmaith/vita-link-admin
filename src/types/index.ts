@@ -189,6 +189,11 @@ export interface HeatmapPoint {
   supplyLevel: number;   // 0-100
 }
 
+export interface HeatmapDataPoint {
+  region: Region;
+  demandLevel: number;
+}
+
 // --- Filtres ---
 
 export interface GlobalFilters {

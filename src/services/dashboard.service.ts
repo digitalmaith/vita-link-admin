@@ -1,4 +1,5 @@
 import { api } from "@/lib/api/client";
+import { GlobalFilters, HeatmapDataPoint } from "@/types";
 
 export interface DashboardKPIs {
   totalDonors: number;
@@ -51,4 +52,23 @@ export const dashboardService = {
 
   getRegionStats: () =>
     api.get<RegionStatsResponse>("/admin/stats/regions"),
+
+  getHeatmapData: async (filters?: GlobalFilters): Promise<HeatmapDataPoint[]> => {
+  try {
+    // Si api.get() retourne déjà response.data
+    const response: any = await api.get("/admin/stats/heatmap", {
+      params: filters,
+    });
+    return response.data || response;
+  } catch {
+    // Fallback
+    const response: any = await api.get("/admin/stats/regions");
+    const regionStats = response.data || response;
+    
+    return regionStats.map((stat: any) => ({
+      region: stat.region,
+      demandLevel: stat.demandLevel || 0
+    }));
+  }
+}
 };
