@@ -1,41 +1,33 @@
 "use client";
 
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { dashboardService } from "@/services/dashboard.service";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
+  LineChart, Line,
+  XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3 } from "lucide-react";
-import { useDashboardKPIs } from "@/hooks/useDashboardKPIs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDashboardKPIs } from "@/hooks/useDashboardKPIs";
+import { TrendingUp, BarChart3 } from "lucide-react";
 
-// Données simulées pour la tendance mensuelle
-// À remplacer quand l'endpoint /admin/stats sera disponible
-const MOCK_TREND = [
-  { mois: "Jan", dons: 420, alertes: 38 },
-  { mois: "Fév", dons: 380, alertes: 42 },
-  { mois: "Mar", dons: 510, alertes: 35 },
-  { mois: "Avr", dons: 490, alertes: 50 },
-  { mois: "Mai", dons: 320, alertes: 61 },
-  { mois: "Jun", dons: 290, alertes: 58 },
-  { mois: "Jul", dons: 260, alertes: 70 },
-  { mois: "Aoû", dons: 310, alertes: 65 },
-  { mois: "Sep", dons: 450, alertes: 48 },
-  { mois: "Oct", dons: 530, alertes: 40 },
-  { mois: "Nov", dons: 480, alertes: 44 },
-  { mois: "Déc", dons: 410, alertes: 52 },
-];
+const YEARS = [2024, 2025, 2026];
 
 export function DonationTrendChart() {
-  const { data: kpis, isLoading } = useDashboardKPIs();
+  const [year, setYear] = useState(new Date().getFullYear());
+  const { data: dashboardData, isLoading: kpisLoading } = useDashboardKPIs();
+  const kpis = dashboardData?.kpis;
 
-  // Données réelles du dashboard pour le graphique récapitulatif
+  const { data, isLoading } = useQuery({
+    queryKey: ["stats", "monthly", year],
+    queryFn: () => dashboardService.getMonthlyStats(year),
+  });
+
+  const chartData = data?.data ?? [];
+
   const summaryData = [
     { label: "Jambaars", value: kpis?.totalDonors ?? 0, color: "#C0392B" },
     { label: "Structures", value: kpis?.totalStructures ?? 0, color: "#2980B9" },
@@ -59,7 +51,7 @@ export function DonationTrendChart() {
           </p>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {kpisLoading ? (
             <Skeleton className="h-[200px] w-full" />
           ) : (
             <ResponsiveContainer width="100%" height={200}>
@@ -74,46 +66,58 @@ export function DonationTrendChart() {
                     fontSize: "12px",
                   }}
                 />
-                <Bar dataKey="value" name="Total" radius={[4, 4, 0, 0]}>
-                  {summaryData.map((entry, index) => (
-                    <rect key={index} fill={entry.color} />
-                  ))}
-                </Bar>
+                <Bar dataKey="value" name="Total" radius={[4, 4, 0, 0]} fill="#C0392B" />
               </BarChart>
             </ResponsiveContainer>
           )}
         </CardContent>
       </Card>
 
-      {/* Graphique 2 — Tendance mensuelle simulée */}
+      {/* Graphique 2 — Tendances mensuelles réelles */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-primary" />
-            Tendances mensuelles
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              Tendances mensuelles
+            </CardTitle>
+            <select
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="text-xs border border-input rounded-md px-2 py-1 bg-background"
+            >
+              {YEARS.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
           <p className="text-xs text-muted-foreground">
-            Données simulées — en attente de l'endpoint /admin/stats
+            Dons, alertes et vies sauvées par mois
           </p>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={MOCK_TREND} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="mois" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip
-                contentStyle={{
-                  borderRadius: "8px",
-                  border: "1px solid hsl(var(--border))",
-                  fontSize: "12px",
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: "11px" }} />
-              <Bar dataKey="dons" name="Dons" fill="#C0392B" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="alertes" name="Alertes" fill="#D97706" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {isLoading ? (
+            <Skeleton className="h-[200px] w-full" />
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: "8px",
+                    border: "1px solid hsl(var(--border))",
+                    fontSize: "12px",
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: "11px" }} />
+                <Line type="monotone" dataKey="donations" name="Dons" stroke="#C0392B" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="alerts" name="Alertes" stroke="#D97706" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="livesSaved" name="Vies sauvées" stroke="#16A34A" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </CardContent>
       </Card>
     </div>
