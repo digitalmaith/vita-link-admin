@@ -4,9 +4,13 @@ import { authOptions } from "@/lib/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://vita-link-api.onrender.com/api";
 
-async function handler(req: NextRequest, { params }: { params: { path: string[] } }) {
+async function handler(
+  req: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
   const session = await getServerSession(authOptions);
-  const path = params.path.join("/");
+  const { path: pathSegments } = await params;
+  const path = pathSegments.join("/");
   const url = new URL(req.url);
   const queryString = url.search;
 
@@ -21,9 +25,10 @@ async function handler(req: NextRequest, { params }: { params: { path: string[] 
   const response = await fetch(`${API_URL}/${path}${queryString}`, {
     method: req.method,
     headers,
-    body: req.method !== "GET" && req.method !== "HEAD"
-      ? await req.text()
-      : undefined,
+    body:
+      req.method !== "GET" && req.method !== "HEAD"
+        ? await req.text()
+        : undefined,
   });
 
   const data = await response.json();
