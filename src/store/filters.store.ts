@@ -14,6 +14,9 @@ interface FiltersState {
 const initialFilters: GlobalFilters = {
   region: undefined,
   bloodGroup: undefined,
+  search: undefined, 
+  grade: undefined,
+  
 };
 
 export const useFiltersStore = create<FiltersState>((set) => ({
