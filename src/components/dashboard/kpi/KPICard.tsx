@@ -52,7 +52,7 @@ export function KPICard({
               styles.glow
             )}
           >
-            <Icon className={cn("w-6 h-6 transition-transform duration-300 group-hover:rotate-12", styles.icon)} />
+            <Icon className={cn("w-4 h-4 transition-transform duration-300 group-hover:rotate-12", styles.icon)} />
           </div>
 
           {trend && trendValue && trendConfig && TrendIcon && (

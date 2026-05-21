@@ -1,4 +1,4 @@
-import type { DashboardKPIs } from "@/types";
+import type { DashboardKPIs } from "@/services/dashboard.service";
 
 /**
  * Normalise les données backend vers un format UI stable
