@@ -14,15 +14,16 @@ export function DashboardContent() {
 
       {/* KPIs */}
       <DashboardKPISection />
+       {/* Heatmap + Filtres additionnels */}
+      <HeatmapAndFiltersSection />
 
       {/* Graphique des tendances + Alertes */}
       <TrendsAndAlertsSection />
 
-      {/* Heatmap + Filtres additionnels */}
-      <HeatmapAndFiltersSection />
+     
 
       {/* Graphique interactif */}
-      <ChartAreaInteractive />
+      {/* <ChartAreaInteractive /> */}
     </>
   );
 }
