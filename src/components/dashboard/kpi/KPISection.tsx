@@ -3,6 +3,7 @@
 import { Activity, RefreshCw, TrendingUp, AlertTriangle } from "lucide-react";
 import { KPICard } from "./KPICard";
 import type { KPICardProps } from "../../../types/kpi-types";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface KPISectionProps {
   cards?: KPICardProps[]; // ✅ Rendre optionnel
@@ -32,7 +33,7 @@ export function KPISection({
 
       {/* Grille de KPIs */}
       {cards && cards.length > 0 ? ( // ✅ Vérification avant le map
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {cards.map((card, index) => (
             <div
               key={card.title || `kpi-${index}`} // ✅ Fallback pour la key
@@ -42,7 +43,9 @@ export function KPISection({
                 animationFillMode: 'both'
               }}
             >
-              <KPICard {...card} isLoading={isLoading} />
+              <TooltipProvider>
+                <KPICard {...card} isLoading={isLoading} />
+              </TooltipProvider>
             </div>
           ))}
         </div>
