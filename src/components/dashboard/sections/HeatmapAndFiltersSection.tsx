@@ -1,6 +1,7 @@
-import { RegionHeatmap } from "@/components/dashboard/RegionHeatmap";
+import { RegionHeatmap } from "@/components/dashboard/heatmap/RegionHeatmap";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { AlertsPanel } from "../AlertsPanel";
+// import { RegionHeatmap } from "../heatmap/RegionHeatmap";
 
 export function HeatmapAndFiltersSection() {
   return (
