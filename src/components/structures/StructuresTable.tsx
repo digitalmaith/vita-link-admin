@@ -96,7 +96,7 @@ export function StructuresTable() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {s.status === "PENDING" && (
+                            {s.status === "PENDING_REVIEW" && (
                               <>
                                 <DropdownMenuItem
                                   className="text-green-600"

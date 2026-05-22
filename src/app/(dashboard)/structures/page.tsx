@@ -18,7 +18,7 @@ export default function StructuresPage() {
   const queryClient = useQueryClient();
   const [view, setView] = useState<"table" | "card">("table");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("PENDING");
+  const [statusFilter, setStatusFilter] = useState("PENDING_REVIEW");
   const [selectedStructure, setSelectedStructure] = useState<HealthStructure | null>(null);
   const [structureToSuspend, setStructureToSuspend] = useState<HealthStructure | null>(null);
   const { data, isLoading } = useQuery({
@@ -79,7 +79,7 @@ export default function StructuresPage() {
     const all = data?.structures ?? [];
     return {
       ALL: all.length,
-      PENDING: all.filter((s) => s.status === "PENDING").length,
+      PENDING_REVIEW: all.filter((s) => s.status === "PENDING_REVIEW").length,
       VERIFIED: all.filter((s) => s.status === "VERIFIED").length,
       SUSPENDED: all.filter((s) => s.status === "SUSPENDED").length,
       REJECTED: all.filter((s) => s.status === "REJECTED").length,
