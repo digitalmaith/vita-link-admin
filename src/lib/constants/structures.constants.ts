@@ -12,7 +12,7 @@ export const STATUS_FILTERS = [
   { value: "PENDING_REVIEW",   label: "En attent" },
   { value: "VERIFIED",  label: "Certifiées" },
   { value: "SUSPENDED", label: "Suspendues" },
-  // { value: "REJECTED",  label: "Rejetées" },
+  { value: "REJECTED",  label: "Rejetées" },
 ];
 
 // Configuration des gradients par statut
