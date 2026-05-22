@@ -9,20 +9,47 @@ export interface DashboardFilters {
 }
 
 export const dashboardService = {
-  async getKPIs(): Promise<DashboardKPIs> {
+  async getKPIs(filters?: DashboardFilters): Promise<DashboardKPIs> {
     const res = await api.get<{ success: boolean; kpis: DashboardKPIs }>(
-      "/admin/dashboard"
+      "/admin/dashboard",
+      { params: filters }
     );
     return res.kpis;
   },
 
-  getHeatmapData: async (filters?: DashboardFilters): Promise<HeatmapPoint[]> => {
-  const res = await api.get<{ data: HeatmapPoint[] }>("/dashboard/heatmap", {
-    params: filters,
-  });
+  async getMonthlyStats(filters?: DashboardFilters): Promise<any[]> {
+    try {
+      const res = await api.get<{ success: boolean; data: any[] } | any[]>(
+        "/admin/stats/monthly",
+        { params: filters }
+      );
+      return Array.isArray(res) ? res : (res as any).data || (res as any).stats || [];
+    } catch (error) {
+      console.error("Erreur lors de la récupération des stats mensuelles :", error);
+      return [];
+    }
+  },
 
-  return res.data;
-},
+  async getRegionStats(filters?: DashboardFilters): Promise<any[]> {
+    try {
+      const res = await api.get<{ success: boolean; data: any[] } | any[]>(
+        "/admin/stats/regions",
+        { params: filters }
+      );
+      return Array.isArray(res) ? res : (res as any).data || (res as any).stats || [];
+    } catch (error) {
+      console.error("Erreur lors de la récupération des stats régionales :", error);
+      return [];
+    }
+  },
+
+  getHeatmapData: async (filters?: DashboardFilters): Promise<HeatmapPoint[]> => {
+    const res = await api.get<{ data: HeatmapPoint[] }>("/dashboard/heatmap", {
+      params: filters,
+    });
+    return res.data;
+  },
+
   getSystemAlerts: () =>
     api.get<Alert[]>("/dashboard/alerts"),
 

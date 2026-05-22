@@ -29,14 +29,17 @@ export function FilterBar({
   showBloodGroup = false,
   showSearch = false,
   showGrade = false,
+  showDateRange = false,
 }: FilterBarProps) {
   const { filters, setFilter, clearFilters } = useFiltersStore();
 
   const hasActiveFilters =
-    filters.region ||
+    !!(filters.region ||
     filters.bloodGroup ||
     filters.search ||
-    filters.grade;
+    filters.grade ||
+    filters.dateFrom ||
+    filters.dateTo);
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -130,13 +133,41 @@ export function FilterBar({
         </Select>
       )}
 
+      {/* DATE RANGE */}
+      {showDateRange && (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex items-center">
+            <span className="absolute left-2.5 text-[10px] uppercase font-bold text-rose-500 dark:text-rose-400 pointer-events-none">
+              Du
+            </span>
+            <Input
+              type="date"
+              className="w-36 pl-8 pr-1.5 h-9 text-xs focus-visible:ring-rose-500 focus-visible:border-rose-500 rounded-lg border-border"
+              value={filters.dateFrom ?? ""}
+              onChange={(e) => setFilter("dateFrom", e.target.value || undefined)}
+            />
+          </div>
+          <div className="relative flex items-center">
+            <span className="absolute left-2.5 text-[10px] uppercase font-bold text-rose-500 dark:text-rose-400 pointer-events-none">
+              Au
+            </span>
+            <Input
+              type="date"
+              className="w-36 pl-8 pr-1.5 h-9 text-xs focus-visible:ring-rose-500 focus-visible:border-rose-500 rounded-lg border-border"
+              value={filters.dateTo ?? ""}
+              onChange={(e) => setFilter("dateTo", e.target.value || undefined)}
+            />
+          </div>
+        </div>
+      )}
+
       {/* RESET */}
       {hasActiveFilters && (
         <Button
           variant="ghost"
           size="sm"
           onClick={clearFilters}
-          className="h-9 text-muted-foreground"
+          className="h-9 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20"
         >
           <X className="w-3.5 h-3.5 mr-1" />
           Réinitialiser
