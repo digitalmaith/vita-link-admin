@@ -12,14 +12,14 @@ mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
 const STATUS_COLORS = {
   VERIFIED:  "#16A34A",
-  PENDING:   "#D97706",
+  PENDING_REVIEW:   "#D97706",
   SUSPENDED: "#DC2626",
   REJECTED:  "#6B7280",
 };
 
 const STATUS_LABELS = {
   VERIFIED:  "Certifiée",
-  PENDING:   "En attente",
+  PENDING_REVIEW:   "En attente",
   SUSPENDED: "Suspendue",
   REJECTED:  "Rejetée",
 };
@@ -115,7 +115,7 @@ export function StructuresMap() {
 
   const structures = data?.structures ?? [];
   const verified  = structures.filter((s) => s.status === "VERIFIED").length;
-  const pending   = structures.filter((s) => s.status === "PENDING").length;
+  const pending   = structures.filter((s) => s.status === "PENDING_REVIEW").length;
   const suspended = structures.filter((s) => s.status === "SUSPENDED").length;
 
   return (
