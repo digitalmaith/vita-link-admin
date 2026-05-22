@@ -16,7 +16,7 @@ export interface HealthStructure {
   phone: string;
   email: string;
   isVerified: boolean;
-  status: "VERIFIED" | "PENDING" | "SUSPENDED" | "REJECTED";
+  status: "VERIFIED" | "PENDING_REVIEW" | "SUSPENDED" | "REJECTED";
   verifiedAt: string | null;
   createdAt: string;
   _count: StructureCount;

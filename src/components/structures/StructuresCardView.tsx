@@ -111,7 +111,7 @@ export function StructuresCardView({ structures, onSelect, onVerify, onSuspend, 
         <AnimatePresence mode="popLayout">
           {structures.map((s, index) => {
             const isHovered = hoveredId === s.id;
-            const gradient = STATUS_GRADIENTS[s.status as keyof typeof STATUS_GRADIENTS] || STATUS_GRADIENTS.PENDING;
+            const gradient = STATUS_GRADIENTS[s.status as keyof typeof STATUS_GRADIENTS] || STATUS_GRADIENTS.PENDING_REVIEW;
             
             return (
               <motion.div
@@ -211,7 +211,7 @@ export function StructuresCardView({ structures, onSelect, onVerify, onSuspend, 
                             Page publique
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          {s.status === "PENDING" && (
+                          {s.status === "PENDING_REVIEW" && (
                             <>
                               <DropdownMenuItem 
                                 className="text-emerald-600 dark:text-emerald-400"
