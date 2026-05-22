@@ -212,3 +212,9 @@ export interface ReportSummary {
   topRegion: Region;
   topBloodGroup: BloodGroup;
 }
+
+export interface RegionStats {
+  region: string;
+  demandLevel: number;
+  donorsCount: number;
+}
