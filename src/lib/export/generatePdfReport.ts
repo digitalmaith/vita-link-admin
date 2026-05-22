@@ -242,7 +242,10 @@ export async function generatePdfReport({ kpis, period, generatedBy }: ReportOpt
   // ════════════════════════════════
   // PIED DE PAGE — toutes les pages
   // ════════════════════════════════
-  const pageCount = doc.getNumberOfPages();
+    const pageCount = (doc as any).getNumberOfPages?.() || 
+                    (doc as any).internal?.pages?.length || 
+                    1;
+
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     drawRect(0, 287, W, 10, RED);
