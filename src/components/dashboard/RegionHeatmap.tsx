@@ -4,11 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { dashboardService } from "@/services/dashboard.service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Map as MapIcon, TrendingUp, TrendingDown, Activity, Flame } from "lucide-react";
+import { Map as MapIcon, TrendingUp, TrendingDown, Activity, Flame, Users } from "lucide-react";
 import { useFiltersStore } from "@/store/filters.store";
 import { REGIONS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import type { HeatmapPoint, Region } from "@/types";
+import type { RegionStats } from "@/types";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 
 // Niveau de criticité par couleur avec gradients
@@ -27,7 +27,7 @@ function getDemandInfo(level: number) {
   return { icon: TrendingDown, label: "Faible", color: "text-emerald-200" };
 }
 
-// Animation variants pour les cartes - Version corrigée
+// Animation variants pour les cartes
 const cardVariants: Variants = {
   hidden: { opacity: 0, scale: 0.8 },
   visible: (i: number) => ({
@@ -69,26 +69,28 @@ const SkeletonCard = () => (
 export function RegionHeatmap() {
   const { filters } = useFiltersStore();
 
-  const { data: heatmapData = [], isLoading } = useQuery({
-    queryKey: ["dashboard", "heatmap", filters],
-    queryFn: () => dashboardService.getHeatmapData(filters),
+  const { data: regionsStats = [], isLoading } = useQuery<RegionStats[]>({
+    queryKey: ["dashboard", "regions-stats", filters],
+    queryFn: () => dashboardService.getRegionsStats(filters),
   });
 
-  const demandByRegion = new Map<Region, number>(
-    heatmapData.map((p) => [p.region, p.demandLevel])
+  // Créer une Map pour un accès rapide par région
+  const statsByRegion = new Map<string, RegionStats>(
+    regionsStats.map((stat) => [stat.region, stat])
   );
 
   // Calcul des statistiques globales
-  const avgDemand = heatmapData.length > 0
-    ? Math.round(heatmapData.reduce((acc, p) => acc + p.demandLevel, 0) / heatmapData.length)
+  const avgDemand = regionsStats.length > 0
+    ? Math.round(regionsStats.reduce((acc, stat) => acc + stat.demandLevel, 0) / regionsStats.length)
     : 0;
   
-  const criticalRegions = heatmapData.filter(p => p.demandLevel >= 75).length;
-  const highDemandRegions = heatmapData.filter(p => p.demandLevel >= 50 && p.demandLevel < 75).length;
+  const criticalRegions = regionsStats.filter(stat => stat.demandLevel >= 75).length;
+  const highDemandRegions = regionsStats.filter(stat => stat.demandLevel >= 50 && stat.demandLevel < 75).length;
+  const totalDonors = regionsStats.reduce((acc, stat) => acc + stat.donorsCount, 0);
 
   // Trouver la région avec la plus forte demande
-  const topRegion = heatmapData.length > 0
-    ? heatmapData.reduce((max, p) => p.demandLevel > max.demandLevel ? p : max, heatmapData[0])
+  const topRegion = regionsStats.length > 0
+    ? regionsStats.reduce((max, stat) => stat.demandLevel > max.demandLevel ? stat : max, regionsStats[0])
     : null;
 
   return (
@@ -103,7 +105,7 @@ export function RegionHeatmap() {
           </CardTitle>
           
           {/* Badge statistique */}
-          {!isLoading && heatmapData.length > 0 && (
+          {!isLoading && regionsStats.length > 0 && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -124,7 +126,7 @@ export function RegionHeatmap() {
         </div>
 
         {/* Stats rapides */}
-        {!isLoading && heatmapData.length > 0 && (
+        {!isLoading && regionsStats.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -140,6 +142,11 @@ export function RegionHeatmap() {
               <TrendingUp className="w-3 h-3 text-orange-500" />
               <span className="font-medium">{highDemandRegions}</span>
               <span className="text-muted-foreground">à forte demande</span>
+            </div>
+            <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-muted/30">
+              <Users className="w-3 h-3 text-blue-500" />
+              <span className="font-medium">{totalDonors}</span>
+              <span className="text-muted-foreground">donneurs totaux</span>
             </div>
             {topRegion && (
               <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-muted/30">
@@ -174,16 +181,18 @@ export function RegionHeatmap() {
 
       <CardContent>
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {Array.from({ length: REGIONS.length }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <AnimatePresence mode="popLayout">
               {REGIONS.map((region, index) => {
-                const level = demandByRegion.get(region) ?? 0;
+                const regionStat = statsByRegion.get(region);
+                const level = regionStat?.demandLevel ?? 0;
+                const donors = regionStat?.donorsCount ?? 0;
                 const DemandIcon = getDemandInfo(level).icon;
                 const demandInfo = getDemandInfo(level);
                 const gradientClass = getDemandColor(level);
@@ -224,6 +233,12 @@ export function RegionHeatmap() {
                           <p className="text-2xl font-bold leading-tight">{level}</p>
                           <p className="text-xs opacity-80">%</p>
                         </div>
+
+                        {/* Nombre de donneurs */}
+                        <div className="flex items-center gap-1 mt-1">
+                          <Users className="w-3 h-3 opacity-70" />
+                          <span className="text-xs opacity-80">{donors}</span>
+                        </div>
                         
                         {/* Barre de progression */}
                         <div className="mt-2 h-1 bg-black/20 rounded-full overflow-hidden">
@@ -262,7 +277,7 @@ export function RegionHeatmap() {
         )}
 
         {/* Message d'état vide */}
-        {!isLoading && heatmapData.length === 0 && (
+        {!isLoading && regionsStats.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -281,7 +296,7 @@ export function RegionHeatmap() {
       </CardContent>
 
       {/* Footer avec timestamp */}
-      {!isLoading && heatmapData.length > 0 && (
+      {!isLoading && regionsStats.length > 0 && (
         <div className="px-6 pb-4">
           <p className="text-[10px] text-muted-foreground/50 text-center">
             Dernière mise à jour : {new Date().toLocaleTimeString()}
