@@ -1,5 +1,5 @@
 import { api } from "@/lib/api/client";
-import type { DashboardKPIs, Alert, Region, BloodGroup , HeatmapPoint} from "@/types";
+import type { DashboardKPIs, Alert, Region, BloodGroup , HeatmapPoint, RegionStats} from "@/types";
 
 export interface DashboardFilters {
   region?: Region;
@@ -30,4 +30,12 @@ export const dashboardService = {
     api.get<Alert[]>("/alerts", {
       params: { limit, sort: "createdAt:desc" },
     }),
+
+  async getRegionsStats(filters?: any): Promise<RegionStats[]> {
+    const res = await api.get<{ success: boolean; data: RegionStats[] }>(
+      '/admin/stats/regions', 
+      { params: filters }
+    );
+    return res.data;
+  }
 };
