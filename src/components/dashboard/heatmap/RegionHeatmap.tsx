@@ -74,7 +74,6 @@ export function RegionHeatmap() {
             {!isLoading && <HeatmapStats regionsStats={regionsStats} {...stats} />}
           </div>
 
-          {!isLoading && <HeatmapStats regionsStats={regionsStats} {...stats} />}
           <HeatmapLegend />
         </CardHeader>
 
