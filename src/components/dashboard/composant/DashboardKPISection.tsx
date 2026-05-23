@@ -1,71 +1,103 @@
-"use client";
-
+// DashboardKPISection.tsx
 import { KPISection } from "@/components/dashboard/kpi/KPISection";
 import { useDashboardKPIs } from "@/hooks/useDashboardKPIs";
 import { adaptDashboardKPIs } from "@/adapters/dashboard.adapter";
-import { Heart, Clock, AlertTriangle, Users, Hospital } from "lucide-react";
+import { Heart, Clock, AlertTriangle, Users, Hospital, Activity } from "lucide-react";
 import type { KPICardProps, KPIVariant } from "@/types/kpi-types";
+import { useMemo } from "react";
 
 export function DashboardKPISection() {
   const { data: rawKpis, isLoading, refetch } = useDashboardKPIs();
   const kpis = rawKpis ? adaptDashboardKPIs(rawKpis) : null;
 
-  const cards: KPICardProps[] = [
-    {
-      title: "Vies sauvées",
-      value: kpis?.livesSaved ?? 0,
-      icon: Heart,
-      description: "Estimation des vies sauvées ",
-      variant: "success" as KPIVariant,
-      trend: "up",
-      trendValue: "+12%",
-    },
-    {
-      title: "Temps de réponse",
-      value: kpis?.avgResponseTime ?? "—",
-      icon: Clock,
-      description: "Délai moyen de prise en charge",
-      variant: "info" as KPIVariant,
-      trend: "down",
-      trendValue: "-2.5min",
-    },
-    {
-      title: "Régions critiques",
-      value: kpis?.criticalRegions ?? 0,
-      icon: AlertTriangle,
-      description: "Zones en pénurie de sang",
-      variant: ((kpis?.criticalRegions ?? 0) > 3 ? "danger" : "warning") as KPIVariant,
-      trend: ((kpis?.criticalRegions ?? 0) > 3 ? "up" : "down") as "up" | "down",
-      trendValue: ((kpis?.criticalRegions ?? 0) > 3 ? "+2" : "-1"),
-    },
-    {
-      title: "Donneurs actifs",
-      value: kpis?.donors ?? 0,
-      icon: Users,
-      description: "Jambaars actifs ce mois",
-      variant: "default" as KPIVariant,
-      trend: "up",
-      trendValue: "+156",
-    },
-    {
-      title: "Structures",
-      value: kpis?.structures ?? 0,
-      icon: Hospital,
-      description: "Structures de santé partenaires",
-      variant: "default" as KPIVariant,
-    },
-  ];
+  const cards: KPICardProps[] = useMemo(() => {
+    if (!kpis) return [];
+
+    return [
+      {
+        title: "Vies sauvées",
+        value: kpis.livesSaved,
+        icon: Heart,
+        variant: "success" as KPIVariant,
+        trend: kpis.livesSavedTrend >= 0 ? "up" : "down",
+        trendValue: `${kpis.livesSavedTrend >= 0 ? "+" : ""}${kpis.livesSavedTrend}%`,
+        
+      },
+      {
+        title: "Temps de réponse",
+        value: kpis.avgResponseTimeFormatted,
+        icon: Clock,
+        variant: getResponseTimeVariant(kpis.avgResponseTime),
+        trend: kpis.responseTimeTrend <= 0 ? "down" : "up",
+        trendValue: `${kpis.responseTimeTrend > 0 ? "+" : ""}${kpis.responseTimeTrend} min`,
+        
+      },
+      {
+        title: "Donneurs actifs",
+        value: kpis.donors,
+        icon: Users,
+        variant: "default" as KPIVariant,
+        trend: kpis.donorsTrend >= 0 ? "up" : "down",
+        trendValue: `${kpis.donorsTrend >= 0 ? "+" : ""}${kpis.donorsTrend}%`,
+      },
+      {
+        title: "Structures",
+        value: kpis.structures,
+        icon: Hospital,
+        variant: getStructuresVariant(kpis.criticalRegions),
+        trend: kpis.structuresTrend >= 0 ? "up" : "down",
+        trendValue: `${kpis.structuresTrend >= 0 ? "+" : ""}${kpis.structuresTrend}%`,
+      },
+      // {
+      //   title: "Alertes en cours",
+      //   value: kpis.openAlerts,
+      //   icon: AlertTriangle,
+      //   variant: getAlertsVariant(kpis.openAlerts),
+      //   trend: kpis.openAlertsTrend <= 0 ? "down" : "up",
+      //   trendValue: `${kpis.openAlertsTrend >= 0 ? "+" : ""}${kpis.openAlertsTrend}%`,
+      // },
+    ];
+  }, [kpis]);
+
+  const summary = useMemo(() => {
+    if (!kpis) return undefined;
+    
+    return {
+      coverageRate: kpis.coverageRate,
+      monthlyGoal: kpis.monthlyGoal,
+      progress: kpis.monthlyProgress,
+      lastUpdated: kpis.lastUpdated,
+    };
+  }, [kpis]);
 
   return (
     <KPISection
       cards={cards}
       isLoading={isLoading}
       onRefresh={() => refetch?.()}
-      summary={{
-        coverageRate: 87,
-        monthlyGoal: 1200,
-        progress: 72,
-      }}
+      summary={summary}
     />
   );
+}
+
+// Fonctions utilitaires pour les variants
+function getResponseTimeVariant(minutes: number): KPIVariant {
+  if (minutes <= 15) return "success";
+  if (minutes <= 30) return "info";
+  if (minutes <= 60) return "warning";
+  return "danger";
+}
+
+function getStructuresVariant(criticalRegions: number): KPIVariant {
+  if (criticalRegions === 0) return "success";
+  if (criticalRegions <= 2) return "info";
+  if (criticalRegions <= 5) return "warning";
+  return "danger";
+}
+
+function getAlertsVariant(openAlerts: number): KPIVariant {
+  if (openAlerts === 0) return "success";
+  if (openAlerts <= 5) return "info";
+  if (openAlerts <= 10) return "warning";
+  return "danger";
 }
