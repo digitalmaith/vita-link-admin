@@ -12,12 +12,13 @@ export function DashboardContent() {
     <>
       {/* Filtres globaux */}
       {/* <FilterBar showRegion showBloodGroup showDateRange /> */}
+      {/* carte map */}
+      <StructuresMap />
 
       {/* KPIs */}
       <DashboardKPISection />
 
-      {/* carte map */}
-      <StructuresMap />
+      
 
       {/* Heatmap + Filtres additionnels */}
       <HeatmapAndFiltersSection />
