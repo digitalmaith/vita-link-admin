@@ -59,6 +59,8 @@ export function JambaarDirectory() {
         {
           bloodGroup: filters.bloodGroup,
           region: filters.region,
+          search: filters.search,
+          grade: filters.grade,
         },
         page
       ),
@@ -66,13 +68,19 @@ export function JambaarDirectory() {
   });
 
   const suspend = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       jambaarService.suspend(id, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jambaars"] });
       toast.success("Jambaar suspendu");
     },
-    onError: () => toast.error("Erreur lors de la suspension"),
+    onError: (err: any) => {
+      console.error("Erreur suspension complète:", JSON.stringify(err, null, 2));
+      
+      toast.error("Erreur lors de la suspension", {
+        description: err?.message || "Vérifiez la console pour plus de détails.",
+      });
+    },
   });
 
   const reactivate = useMutation({
@@ -81,7 +89,12 @@ export function JambaarDirectory() {
       queryClient.invalidateQueries({ queryKey: ["jambaars"] });
       toast.success("Jambaar réactivé");
     },
-    onError: () => toast.error("Erreur lors de la réactivation"),
+    onError: (err: any) => {
+      console.error("Erreur réactivation:", err);
+      toast.error("Erreur lors de la réactivation", {
+        description: err?.message || "Vérifiez la console pour plus de détails.",
+      });
+    },
   });
 
   if (sessionStatus === "loading" || isLoading) {

@@ -122,11 +122,8 @@ export const jambaarService = {
   getById: (id: string) =>
     api.get<ApiResponse<Jambaar>>(`${BASE}/${id}`),
 
-  suspend: (id: string, reason: string, durationDays?: number) =>
-    api.patch<ApiResponse<Jambaar>>(`${BASE}/${id}/suspend`, {
-      reason,
-      durationDays,
-    }),
+  suspend: (id: string, reason?: string) =>
+    api.patch<ApiResponse<Jambaar>>(`${BASE}/${id}/suspend`, reason ? { reason } : {}),
 
   reactivate: (id: string) =>
     api.patch<ApiResponse<Jambaar>>(`${BASE}/${id}/reactivate`),
