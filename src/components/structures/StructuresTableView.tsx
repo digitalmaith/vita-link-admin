@@ -85,7 +85,7 @@ export function StructuresTableView({ structures, onSelect, onVerify, onSuspend,
                           Voir les détails
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        {s.status === "PENDING" && (
+                        {s.status === "PENDING_REVIEW" && (
                           <>
                             <DropdownMenuItem className="text-green-600" onClick={() => onVerify(s.id)}>
                               <CheckCircle className="mr-2 h-4 w-4" /> Certifier

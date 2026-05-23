@@ -93,7 +93,7 @@ export function StructureDetailModal({
               </div>
             )}
 
-            {structure.status === "PENDING" && (
+            {structure.status === "PENDING_REVIEW" && (
               <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 text-xs">
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                 <span className="text-amber-700 dark:text-amber-400 font-medium">
@@ -152,7 +152,7 @@ export function StructureDetailModal({
         {/* Actions fixes en bas */}
         <div className="shrink-0 px-5 py-3 border-t border-border bg-muted/30">
           <div className="flex gap-2">
-            {structure.status === "PENDING" && (
+            {structure.status === "PENDING_REVIEW" && (
               <>
                 <Button 
                   size="sm"
