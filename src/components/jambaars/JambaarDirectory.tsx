@@ -58,7 +58,8 @@ export function JambaarDirectory() {
       jambaarService.getAll(
         {
           bloodGroup: filters.bloodGroup,
-          region: filters.region,
+          // grade: filters.grade,
+          search: filters.search,
         },
         page
       ),
@@ -66,13 +67,19 @@ export function JambaarDirectory() {
   });
 
   const suspend = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       jambaarService.suspend(id, reason),
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jambaars"] });
       toast.success("Jambaar suspendu");
     },
-    onError: () => toast.error("Erreur lors de la suspension"),
+
+    onError: (error) => {
+      console.error("Erreur suspension :", error);
+
+      toast.error("Erreur lors de la suspension");
+    },
   });
 
   const reactivate = useMutation({
@@ -81,7 +88,12 @@ export function JambaarDirectory() {
       queryClient.invalidateQueries({ queryKey: ["jambaars"] });
       toast.success("Jambaar réactivé");
     },
-    onError: () => toast.error("Erreur lors de la réactivation"),
+    onError: (err: any) => {
+      console.error("Erreur réactivation:", err);
+      toast.error("Erreur lors de la réactivation", {
+        description: err?.message || "Vérifiez la console pour plus de détails.",
+      });
+    },
   });
 
   if (sessionStatus === "loading" || isLoading) {
@@ -103,16 +115,31 @@ export function JambaarDirectory() {
   }
 
   const jambaars: Jambaar[] = data?.data ?? [];
+  const filteredJambaars = jambaars.filter((j) => {
+  const matchBloodGroup =
+    !filters.bloodGroup || j.bloodGroup === filters.bloodGroup;
+
+  const matchGrade =
+    !filters.grade || j.grade === filters.grade;
+
+  const matchSearch =
+    !filters.search ||
+    `${j.firstName} ${j.lastName}`
+      .toLowerCase()
+      .includes(filters.search.toLowerCase());
+
+  return matchBloodGroup && matchGrade && matchSearch;
+});
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {jambaars.length === 0 ? (
+        {filteredJambaars.length === 0 ? (
           <div className="col-span-full py-16 text-center border border-dashed rounded-2xl bg-card">
             <p className="text-muted-foreground font-semibold">Aucun Jambaar trouvé.</p>
           </div>
         ) : (
-          jambaars.map((j) => {
+          filteredJambaars.map((j) => {
             const currentGrade = GRADE_METADATA[j.grade] || {
               label: j.grade,
               text: "text-muted-foreground",
@@ -124,8 +151,8 @@ export function JambaarDirectory() {
             const isSuspended = j.status !== "ACTIVE";
 
             return (
-              <Card 
-                key={j.id} 
+              <Card
+                key={j.id}
                 className={`overflow-hidden border border-border/60 bg-gradient-to-br from-card to-card/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-l-4 ${currentGrade.borderL} relative group ${isSuspended ? 'opacity-85' : ''}`}
               >
                 <CardContent className="p-5">

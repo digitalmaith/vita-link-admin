@@ -103,10 +103,10 @@ export const jambaarService = {
     if (filters?.bloodGroup) {
       params.bloodType = serializeBloodGroup(filters.bloodGroup); 
     }
-    if (filters?.region)    params.region = filters.region;
+    // if (filters?.region)    params.region = filters.region;
     if (filters?.status)    params.status = filters.status;
-    if (filters?.search)    params.search = filters.search;
-    if (filters?.grade)     params.grade  = filters.grade;
+    // if (filters?.search)    params.search = filters.search;
+    // if (filters?.grade)     params.grade  = filters.grade;
 
     const raw = await api.get<RawApiResponse>(BASE, { params });
 
@@ -122,11 +122,8 @@ export const jambaarService = {
   getById: (id: string) =>
     api.get<ApiResponse<Jambaar>>(`${BASE}/${id}`),
 
-  suspend: (id: string, reason: string, durationDays?: number) =>
-    api.patch<ApiResponse<Jambaar>>(`${BASE}/${id}/suspend`, {
-      reason,
-      durationDays,
-    }),
+  suspend: (id: string, reason?: string) =>
+    api.patch<ApiResponse<Jambaar>>(`${BASE}/${id}/suspend`, reason ? { reason } : {}),
 
   reactivate: (id: string) =>
     api.patch<ApiResponse<Jambaar>>(`${BASE}/${id}/reactivate`),

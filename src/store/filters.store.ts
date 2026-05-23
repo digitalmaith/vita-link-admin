@@ -14,8 +14,8 @@ interface FiltersState {
 const initialFilters: GlobalFilters = {
   region: undefined,
   bloodGroup: undefined,
-  search: undefined, 
-  grade: undefined,
+  // search: undefined, 
+  // grade: undefined,
   
 };
 
