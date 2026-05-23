@@ -92,14 +92,14 @@ export function HeatmapCard({ region, regionStat, index, onClick }: HeatmapCardP
           {/* Niveau de demande */}
           <div className="mb-3">
             <div className="flex items-baseline gap-1">
-              <p className="text-3xl font-black leading-none">{level}</p>
+              <p className="text-2xl font-black leading-none">{level}</p>
               <p className="text-sm font-semibold opacity-70">%</p>
             </div>
             <p className="text-[11px] font-medium opacity-80 mt-0.5">{demandInfo.label}</p>
           </div>
 
           {/* Barre de progression */}
-          <div className="relative h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden mb-2">
+          <div className="relative h-1 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden mb-2">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${level}%` }}
