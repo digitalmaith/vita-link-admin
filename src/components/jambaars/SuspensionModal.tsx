@@ -41,7 +41,7 @@ export function SuspensionModal({ jambaar, isOpen, onClose }: SuspensionModalPro
 
   const suspend = useMutation({
     mutationFn: (data: { id: string; reason: string; durationDays?: number }) =>
-      jambaarService.suspend(data.id, data.reason, data.durationDays),
+      jambaarService.suspend(data.id, data.reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jambaars"] });
       toast.success("Jambaar suspendu avec succès");
