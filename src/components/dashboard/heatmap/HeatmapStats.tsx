@@ -31,20 +31,20 @@ export function HeatmapStats({
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex items-center gap-3 bg-muted/50 backdrop-blur-sm rounded-xl p-2.5"
+        className="flex items-center mt-3 gap-3 bg-muted/50 backdrop-blur-sm rounded-xl px-2.5 py-1"
       >
         <div className="text-center px-2">
-          <p className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+          <p className="text-sm font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
             {avgDemand}%
           </p>
-          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Moy.</p>
+          <p className="text-[8px] text-muted-foreground font-medium uppercase tracking-wider">Moy.</p>
         </div>
         <div className="w-px h-8 bg-border/50" />
         <div className="text-center px-2">
-          <p className="text-xl font-bold bg-gradient-to-r from-red-500 to-rose-500 bg-clip-text text-transparent">
+          <p className="text-sm font-bold bg-gradient-to-r from-red-500 to-rose-500 bg-clip-text text-transparent">
             {criticalRegions}
           </p>
-          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Critiques</p>
+          <p className="text-[8px] text-muted-foreground font-medium uppercase tracking-wider">Critiques</p>
         </div>
       </motion.div>
 

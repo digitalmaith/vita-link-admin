@@ -11,9 +11,9 @@ export const metadata: Metadata = {
 export default function DashboardPage() {
   return (
     <div className="space-y-6 p-6">
-      <DashboardHeader />
+      {/* <DashboardHeader /> */}
       <DashboardContent />
-      <StructuresMap />
+      {/* <StructuresMap /> */}
     </div>
   );
 }
