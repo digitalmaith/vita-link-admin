@@ -103,10 +103,10 @@ export const jambaarService = {
     if (filters?.bloodGroup) {
       params.bloodType = serializeBloodGroup(filters.bloodGroup); 
     }
-    if (filters?.region)    params.region = filters.region;
+    // if (filters?.region)    params.region = filters.region;
     if (filters?.status)    params.status = filters.status;
-    if (filters?.search)    params.search = filters.search;
-    if (filters?.grade)     params.grade  = filters.grade;
+    // if (filters?.search)    params.search = filters.search;
+    // if (filters?.grade)     params.grade  = filters.grade;
 
     const raw = await api.get<RawApiResponse>(BASE, { params });
 

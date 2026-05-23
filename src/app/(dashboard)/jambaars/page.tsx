@@ -6,9 +6,26 @@ import { FilterBar } from "@/components/shared/FilterBar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield, Trophy, Activity } from "lucide-react";
 import { useFiltersStore } from "@/store/filters.store";
+import { useQuery } from "@tanstack/react-query";
+import { jambaarService } from "@/services/jambaars.service";
 
 export default function JambaarPage() {
   const { filters } = useFiltersStore();
+ const { data } = useQuery({
+  queryKey: ["jambaars-count", filters],
+  queryFn: () =>
+    jambaarService.getAll(
+      {
+        bloodGroup: filters.bloodGroup,
+        search: filters.search,
+        grade: filters.grade,
+      },
+      1
+    ),
+  enabled: true,
+});
+const jambaarCount = data?.total ?? data?.data?.length ?? 0;
+
 
   return (
     <div className="space-y-6 w-full">
@@ -49,7 +66,7 @@ export default function JambaarPage() {
             <Shield className="w-4 h-4 transition-all duration-300 data-[state=active]:text-primary data-[state=active]:scale-110" />
             Annuaire & Modération
             <span className="hidden md:inline-flex ml-1.5 px-1.5 py-0.5 text-[10px] font-bold bg-primary/10 rounded-full data-[state=active]:bg-primary/20">
-              342
+           {jambaarCount}
             </span>
           </TabsTrigger>
           
@@ -66,7 +83,7 @@ export default function JambaarPage() {
             <Trophy className="w-4 h-4 text-amber-500 transition-all duration-300 group-hover:rotate-12 data-[state=active]:rotate-0 data-[state=active]:scale-110" />
             Jambaar Life
             <span className="hidden md:inline-flex ml-1.5 px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/10 rounded-full text-amber-600 data-[state=active]:bg-amber-500/20">
-              Top 50
+              Top 10
             </span>
           </TabsTrigger>
         </TabsList>
@@ -80,28 +97,28 @@ export default function JambaarPage() {
                 Recherche & Filtres rapides
               </div>
               <div className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-1 rounded-full">
-                {filters.region || filters.bloodGroup || filters.grade || filters.search ? "Filtres actifs" : "Tous les filtres"}
+                {filters.bloodGroup || filters.grade || filters.search ? "Filtres actifs" : "Tous les filtres"}
               </div>
             </div>
-            <FilterBar showRegion showBloodGroup showSearch showGrade />
+            <FilterBar showBloodGroup showSearch showGrade />
           </div>
           <JambaarDirectory />
         </TabsContent>
 
         {/* 4. Contenu Jambaar Life */}
         <TabsContent value="jambaar-life" className="mt-6 space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="bg-card/70 border border-border/60 backdrop-blur-sm rounded-2xl p-5 shadow-md transition-all duration-300 hover:shadow-lg hover:border-amber-500/20">
+          {/* <div className="bg-card/70 border border-border/60 backdrop-blur-sm rounded-2xl p-5 shadow-md transition-all duration-300 hover:shadow-lg hover:border-amber-500/20">
             <div className="flex items-center justify-between mb-4">
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                 <div className="w-1 h-4 bg-amber-500 rounded-full"></div>
                 Filtres de classement
               </div>
               <div className="text-[10px] text-amber-600 bg-amber-500/10 px-2 py-1 rounded-full">
-                {filters.region ? "Filtre actif" : "Classement général"}
+                {filters.bloodGroup ? "Filtre actif" : "Classement général"}
               </div>
             </div>
-            <FilterBar showRegion />
-          </div>
+            <FilterBar showBloodGroup />
+          </div> */}
           <Leaderboard />
         </TabsContent>
       </Tabs>
