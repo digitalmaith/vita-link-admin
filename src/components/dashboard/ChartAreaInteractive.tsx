@@ -3,10 +3,9 @@
 import * as React from "react";
 import { useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { dashboardService } from "@/services/dashboard.service";
 import { useFiltersStore } from "@/store/filters.store";
+import { useChartData } from "@/hooks/useDashboardKPIs";
 import {
   Card,
   CardContent,
@@ -32,8 +31,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  TrendingUp, TrendingDown, Activity, Users, AlertCircle,
-  Calendar, BarChart3, ArrowUpRight, ArrowDownRight, Minus,
+  Activity, AlertCircle,
+  Calendar, BarChart3,
   Heart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -43,15 +42,15 @@ import { cn } from "@/lib/utils";
 const chartConfig = {
   donations: {
     label: "Dons",
-    color: "hsl(142, 71%, 45%)", // green
+    color: "hsl(142, 71%, 45%)",
   },
   alerts: {
     label: "Alertes",
-    color: "hsl(0, 84%, 60%)", // red
+    color: "hsl(0, 84%, 60%)",
   },
   livesSaved: {
     label: "Vies sauvées",
-    color: "hsl(217, 91%, 60%)", // blue
+    color: "hsl(217, 91%, 60%)",
   },
 } satisfies ChartConfig;
 
@@ -65,7 +64,7 @@ function ChartSkeleton() {
           <Skeleton className="h-5 w-40 bg-white/5" />
           <Skeleton className="h-4 w-60 bg-white/5" />
         </div>
-        <Skeleton className="h-9 w-[140px] rounded-xl bg-white/5" />
+        <Skeleton className="h-9 w-[120px] rounded-xl bg-white/5" />
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         <Skeleton className="h-[300px] w-full rounded-xl bg-white/5" />
@@ -84,7 +83,7 @@ function StatIndicator({
 }: { 
   label: string; 
   value: number; 
-  icon: any; 
+  icon: React.ComponentType<{ className?: string }>; 
   color: string;
 }) {
   return (
@@ -107,14 +106,10 @@ export function ChartAreaInteractive() {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const { filters } = useFiltersStore();
 
-  // ✅ Requête API avec le vrai endpoint
-  const { data: chartResponse, isLoading } = useQuery({
-    queryKey: ["dashboard", "chart", selectedYear, filters],
-    queryFn: () => dashboardService.getChartData({ 
-      year: selectedYear,
-      region: filters.region,
-      bloodGroup: filters.bloodGroup,
-    }),
+  const { data: chartResponse, isLoading } = useChartData({ 
+    year: selectedYear,
+    region: filters.region,
+    bloodGroup: filters.bloodGroup,
   });
 
   const chartData = chartResponse?.data ?? [];
@@ -128,8 +123,11 @@ export function ChartAreaInteractive() {
     }), { donations: 0, alerts: 0, livesSaved: 0 });
   }, [chartData]);
 
-  // Années disponibles (actuelle et précédentes)
-  const availableYears = Array.from({ length: 3 }, (_, i) => currentYear - i);
+  // Années disponibles
+  const availableYears = useMemo(() => 
+    Array.from({ length: 3 }, (_, i) => currentYear - i),
+    [currentYear]
+  );
 
   if (isLoading) {
     return <ChartSkeleton />;
@@ -236,7 +234,7 @@ export function ChartAreaInteractive() {
                   tickMargin={8}
                   minTickGap={32}
                   tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
-                  tickFormatter={(value) => {
+                  tickFormatter={(value: string) => {
                     const date = new Date(value);
                     return date.toLocaleDateString("fr-FR", { month: "short" });
                   }}
@@ -254,9 +252,17 @@ export function ChartAreaInteractive() {
                   content={
                     <ChartTooltipContent
                       className="bg-slate-900 border-white/10 text-white shadow-xl backdrop-blur-xl"
-                      labelFormatter={(value) => {
-                        const date = new Date(value);
-                        return date.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+                      labelFormatter={(value: React.ReactNode) => {
+                        // ✅ Corrigé : accepter ReactNode
+                        const strValue = typeof value === 'string' ? value : String(value ?? '');
+                        if (!strValue) return '';
+                        try {
+                          const date = new Date(strValue);
+                          if (isNaN(date.getTime())) return strValue;
+                          return date.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+                        } catch {
+                          return strValue;
+                        }
                       }}
                       indicator="line"
                     />

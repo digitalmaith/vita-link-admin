@@ -6,19 +6,20 @@ export function useDashboardKPIs(filters?: DashboardFilters) {
   return useQuery({
     queryKey: ["dashboard", "kpis", filters],
     queryFn: () => dashboardService.getKPIs(filters),
-    refetchInterval: 60 * 1000,
+    refetchInterval: 60 * 1000, // 1 minute
   });
 }
 
+// ✅ Corrigé : premier paramètre = year (number), deuxième = filters (optionnel)
 export function useMonthlyStats(year?: number, filters?: DashboardFilters) {
   return useQuery({
     queryKey: ["dashboard", "monthly-stats", year, filters],
     queryFn: () => dashboardService.getChartData({ 
-      year,
-      region: filters?.region,      // ✅ Déjà typé comme Region | undefined
-      bloodGroup: filters?.bloodGroup, // ✅ Déjà typé comme BloodGroup | undefined
+      year: year || new Date().getFullYear(),
+      region: filters?.region,
+      bloodGroup: filters?.bloodGroup,
     }),
-    refetchInterval: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -26,19 +27,18 @@ export function useRegionStats(filters?: DashboardFilters) {
   return useQuery({
     queryKey: ["dashboard", "region-stats", filters],
     queryFn: () => dashboardService.getRegionStats(filters),
-    refetchInterval: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000, // 5 minutes
   });
 }
 
-// ✅ Corrigé : utiliser les types stricts
 export function useChartData(params?: {
   year?: number;
-  region?: Region;      // ✅ Region au lieu de string
-  bloodGroup?: BloodGroup; // ✅ BloodGroup au lieu de string
+  region?: Region;
+  bloodGroup?: BloodGroup;
 }) {
   return useQuery({
     queryKey: ["dashboard", "chart", params],
     queryFn: () => dashboardService.getChartData(params),
-    refetchInterval: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000, // 5 minutes
   });
 }
