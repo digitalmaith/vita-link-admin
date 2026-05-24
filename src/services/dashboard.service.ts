@@ -8,33 +8,36 @@ export interface DashboardFilters {
   dateTo?: string;
 }
 
-// ✅ Type pour les données mensuelles de l'API
 export interface MonthlyStat {
-  month: string;      // "Jan", "Fév", "Mar", etc.
+  month: string;
   donations: number;
   alerts: number;
   livesSaved: number;
 }
 
-// ✅ Type pour la réponse mensuelle
 export interface MonthlyStatsResponse {
   success: boolean;
-  data: MonthlyStat[];
+  data: MonthlyStat[]; // ✅ Garantir que c'est un tableau
 }
 
-// ✅ Type pour les données formatées du graphique
 export interface ChartDataPoint {
-  date: string;       // Format ISO ou mois
-  donors: number;     // Pour la courbe "Donneurs"
-  alerts: number;     // Pour la courbe "Alertes"
-  donations: number;  // Pour la courbe "Dons"
-  livesSaved: number; // Pour info supplémentaire
+  date: string;
+  donors: number;
+  alerts: number;
+  donations: number;
+  livesSaved: number;
 }
 
 export interface ChartDataResponse {
   success: boolean;
   data: ChartDataPoint[];
   year: number;
+}
+
+export interface ChartDataParams {
+  year?: number;
+  region?: Region;      // ✅ Pas string
+  bloodGroup?: BloodGroup; // ✅ Pas string
 }
 
 export const dashboardService = {
@@ -47,39 +50,43 @@ export const dashboardService = {
     return res.kpis;
   },
 
-  // ✅ Récupérer les statistiques mensuelles (endpoint réel)
+  // ✅ Récupérer les statistiques mensuelles
   async getMonthlyStats(year?: number): Promise<MonthlyStatsResponse> {
     const res = await api.get<MonthlyStatsResponse>(
       "/admin/stats/monthly",
       { params: { year: year || new Date().getFullYear() } }
     );
-    return res;
+    
+    // ✅ S'assurer que data est toujours un tableau
+    return {
+      success: res.success ?? true,
+      data: Array.isArray(res.data) ? res.data : [],
+    };
   },
 
   // ✅ Récupérer les données formatées pour le graphique
   async getChartData(params: {
     year?: number;
-    region?: Region;
-    bloodGroup?: BloodGroup;
+    region?: Region;      // ✅ Region
+    bloodGroup?: BloodGroup; // ✅ BloodGroup
   } = {}): Promise<ChartDataResponse> {
     try {
       const year = params.year || new Date().getFullYear();
-      
-      // Appel au vrai endpoint
       const monthlyRes = await this.getMonthlyStats(year);
       
-      // Transformer les données pour le graphique
-      const chartData: ChartDataPoint[] = monthlyRes.data.map((stat, index) => {
-        // Créer une date ISO à partir du mois
+      // ✅ Vérifier que monthlyRes.data existe et est un tableau
+      const monthlyData = Array.isArray(monthlyRes.data) ? monthlyRes.data : [];
+
+      const chartData: ChartDataPoint[] = monthlyData.map((stat: MonthlyStat) => {
         const monthIndex = getMonthIndex(stat.month);
         const date = new Date(year, monthIndex, 1);
         
         return {
           date: date.toISOString().split('T')[0],
-          donors: 0, // À adapter selon vos données
-          alerts: stat.alerts,
-          donations: stat.donations,
-          livesSaved: stat.livesSaved,
+          donors: 0,
+          alerts: stat.alerts || 0,
+          donations: stat.donations || 0,
+          livesSaved: stat.livesSaved || 0,
         };
       });
 
@@ -91,7 +98,6 @@ export const dashboardService = {
     } catch (error) {
       console.error("Erreur lors de la récupération des données du graphique :", error);
       
-      // Fallback avec données mockées
       return {
         success: false,
         data: generateMockMonthlyData(params.year || new Date().getFullYear()),
@@ -107,77 +113,70 @@ export const dashboardService = {
         "/admin/stats/regions",
         { params: filters }
       );
-      return Array.isArray(res) ? res : (res as any).data || (res as any).stats || [];
+      const data = Array.isArray(res) ? res : (res as any).data || (res as any).stats || [];
+      return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error("Erreur lors de la récupération des stats régionales :", error);
       return [];
     }
   },
 
-  // Récupérer les données de la heatmap
   getHeatmapData: async (filters?: DashboardFilters): Promise<HeatmapPoint[]> => {
     const res = await api.get<{ data: HeatmapPoint[] }>("/dashboard/heatmap", {
       params: filters,
     });
-    return res.data;
+    return res.data ?? [];
   },
 
-  // Récupérer les alertes système
   getSystemAlerts: () =>
     api.get<Alert[]>("/dashboard/alerts"),
 
-  // Récupérer les alertes récentes
   getRecentAlerts: (limit = 10) =>
     api.get<Alert[]>("/alerts", {
       params: { limit, sort: "createdAt:desc" },
     }),
 
-  // Récupérer les statistiques des régions (nouveau format)
   async getRegionsStats(filters?: any): Promise<RegionStats[]> {
     const res = await api.get<{ success: boolean; data: RegionStats[] }>(
       '/admin/stats/regions',
       { params: filters }
     );
-    return res.data;
+    return res.data ?? [];
   },
 };
 
-/**
- * Convertit un mois abrégé en index (0-11)
- */
+// ✅ Fonction getMonthIndex corrigée
 function getMonthIndex(month: string): number {
-  const months: Record<string, number> = {
-    "Jan": 0, 
-    "Fév": 1, 
-    "Fev": 1,  // Version sans accent
-    "Mar": 2, 
-    "Avr": 3, 
-    "Mai": 4, 
-    "Juin": 5, 
-    "Juil": 6, 
-    "Aoû": 7,
-    "Aou": 7,  // Version sans accent
-    "Sep": 8, 
-    "Oct": 9, 
-    "Nov": 10, 
-    "Déc": 11,
-    "Dec": 11, // Version sans accent
+  const key = month.trim().toLowerCase();
+  
+  const monthMap: Record<string, number> = {
+    "jan": 0, "janvier": 0,
+    "fév": 1, "fev": 1, "février": 1, "fevrier": 1,
+    "mar": 2, "mars": 2,
+    "avr": 3, "avril": 3,
+    "mai": 4,
+    "juin": 5,
+    "juil": 6, "juillet": 6,
+    "aoû": 7, "aou": 7, "août": 7, "aout": 7,
+    "sep": 8, "septembre": 8,
+    "oct": 9, "octobre": 9,
+    "nov": 10, "novembre": 10,
+    "déc": 11, "dec": 11, "décembre": 11, "decembre": 11,
   };
-  return months[month] ?? 0;
+  
+  return monthMap[key] ?? 0;
 }
 
-/**
- * Génère des données mockées pour le graphique (fallback)
- */
+// ✅ Fonction mock corrigée avec types explicites
 function generateMockMonthlyData(year: number): ChartDataPoint[] {
   const months = [
     "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
     "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
   ];
 
-  return months.map((_, index) => {
+  return months.map((_, index: number): ChartDataPoint => {
     const date = new Date(year, index, 1);
-    const seasonMultiplier = 1 + Math.sin((index / 12) * Math.PI * 2) * 0.3;
+    const seasonMultiplier: number = 1 + Math.sin((index / 12) * Math.PI * 2) * 0.3;
     
     return {
       date: date.toISOString().split('T')[0],
