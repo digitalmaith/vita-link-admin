@@ -15,6 +15,8 @@ import {
   LogOut,
   HelpCircle,
   type LucideIcon,
+  Badge,
+  Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/store/sidebar.store";
@@ -96,10 +98,10 @@ export function Sidebar() {
       description: "Statistiques & exports",
     },
     {
-      label: "Paramètres",
-      href: "/settings",
-      icon: Settings,
-      description: "Configuration",
+      label: "Badges",
+      href: "/badges",
+      icon: Award,
+      description: "Badges & Défis",
     },
   ];
 
