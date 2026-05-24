@@ -16,7 +16,7 @@ import { ConfirmModal } from "@/components/shared/ConfirmModal";
 
 export default function StructuresPage() {
   const queryClient = useQueryClient();
-  const [view, setView] = useState<"table" | "card">("table");
+  const [view, setView] = useState<"table" | "card">("card");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("PENDING_REVIEW");
   const [selectedStructure, setSelectedStructure] = useState<HealthStructure | null>(null);

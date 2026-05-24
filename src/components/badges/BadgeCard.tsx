@@ -36,7 +36,7 @@ export function BadgeCard({ badge, onEdit, onDeactivate, onReactivate }: BadgeCa
       transition={{ duration: 0.2 }}
     >
       <Card className={cn(
-        "group relative overflow-hidden transition-all duration-300",
+        "group relative overflow-hidden transition-all duration-300 mt-3",
         "hover:shadow-xl hover:shadow-primary/5",
         "border-border/50 hover:border-primary/20",
         !badge.isActive && "opacity-75 hover:opacity-90"
@@ -55,11 +55,11 @@ export function BadgeCard({ badge, onEdit, onDeactivate, onReactivate }: BadgeCa
             : "from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700"
         )} />
 
-        <CardContent className="relative p-5">
+        <CardContent className="relative p-5 ">
           {/* En-tête */}
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-4">
-              <BadgeIcon iconUrl={badge.iconUrl} name={badge.name} size="lg" />
+              <BadgeIcon iconUrl={badge.iconUrl} name={badge.name} size="sm" />
               <div className="space-y-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-bold text-base truncate">{badge.name}</h3>

@@ -1,16 +1,18 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
+import * as React from "react";
+import { useMemo, useState } from "react";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { motion, AnimatePresence } from "framer-motion";
 import { useFiltersStore } from "@/store/filters.store";
-
+import { useChartData } from "@/hooks/useDashboardKPIs";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   ChartContainer,
   ChartLegend,
@@ -18,249 +20,286 @@ import {
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from "@/components/ui/chart"
+} from "@/components/ui/chart";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Activity, AlertCircle,
+  Calendar, BarChart3,
+  Heart
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export const description = "An interactive area chart"
-
-const chartData = [
-  { date: "2024-04-01", desktop: 222, mobile: 150 },
-  { date: "2024-04-02", desktop: 97, mobile: 180 },
-  { date: "2024-04-03", desktop: 167, mobile: 120 },
-  { date: "2024-04-04", desktop: 242, mobile: 260 },
-  { date: "2024-04-05", desktop: 373, mobile: 290 },
-  { date: "2024-04-06", desktop: 301, mobile: 340 },
-  { date: "2024-04-07", desktop: 245, mobile: 180 },
-  { date: "2024-04-08", desktop: 409, mobile: 320 },
-  { date: "2024-04-09", desktop: 59, mobile: 110 },
-  { date: "2024-04-10", desktop: 261, mobile: 190 },
-  { date: "2024-04-11", desktop: 327, mobile: 350 },
-  { date: "2024-04-12", desktop: 292, mobile: 210 },
-  { date: "2024-04-13", desktop: 342, mobile: 380 },
-  { date: "2024-04-14", desktop: 137, mobile: 220 },
-  { date: "2024-04-15", desktop: 120, mobile: 170 },
-  { date: "2024-04-16", desktop: 138, mobile: 190 },
-  { date: "2024-04-17", desktop: 446, mobile: 360 },
-  { date: "2024-04-18", desktop: 364, mobile: 410 },
-  { date: "2024-04-19", desktop: 243, mobile: 180 },
-  { date: "2024-04-20", desktop: 89, mobile: 150 },
-  { date: "2024-04-21", desktop: 137, mobile: 200 },
-  { date: "2024-04-22", desktop: 224, mobile: 170 },
-  { date: "2024-04-23", desktop: 138, mobile: 230 },
-  { date: "2024-04-24", desktop: 387, mobile: 290 },
-  { date: "2024-04-25", desktop: 215, mobile: 250 },
-  { date: "2024-04-26", desktop: 75, mobile: 130 },
-  { date: "2024-04-27", desktop: 383, mobile: 420 },
-  { date: "2024-04-28", desktop: 122, mobile: 180 },
-  { date: "2024-04-29", desktop: 315, mobile: 240 },
-  { date: "2024-04-30", desktop: 454, mobile: 380 },
-  { date: "2024-05-01", desktop: 165, mobile: 220 },
-  { date: "2024-05-02", desktop: 293, mobile: 310 },
-  { date: "2024-05-03", desktop: 247, mobile: 190 },
-  { date: "2024-05-04", desktop: 385, mobile: 420 },
-  { date: "2024-05-05", desktop: 481, mobile: 390 },
-  { date: "2024-05-06", desktop: 498, mobile: 520 },
-  { date: "2024-05-07", desktop: 388, mobile: 300 },
-  { date: "2024-05-08", desktop: 149, mobile: 210 },
-  { date: "2024-05-09", desktop: 227, mobile: 180 },
-  { date: "2024-05-10", desktop: 293, mobile: 330 },
-  { date: "2024-05-11", desktop: 335, mobile: 270 },
-  { date: "2024-05-12", desktop: 197, mobile: 240 },
-  { date: "2024-05-13", desktop: 197, mobile: 160 },
-  { date: "2024-05-14", desktop: 448, mobile: 490 },
-  { date: "2024-05-15", desktop: 473, mobile: 380 },
-  { date: "2024-05-16", desktop: 338, mobile: 400 },
-  { date: "2024-05-17", desktop: 499, mobile: 420 },
-  { date: "2024-05-18", desktop: 315, mobile: 350 },
-  { date: "2024-05-19", desktop: 235, mobile: 180 },
-  { date: "2024-05-20", desktop: 177, mobile: 230 },
-  { date: "2024-05-21", desktop: 82, mobile: 140 },
-  { date: "2024-05-22", desktop: 81, mobile: 120 },
-  { date: "2024-05-23", desktop: 252, mobile: 290 },
-  { date: "2024-05-24", desktop: 294, mobile: 220 },
-  { date: "2024-05-25", desktop: 201, mobile: 250 },
-  { date: "2024-05-26", desktop: 213, mobile: 170 },
-  { date: "2024-05-27", desktop: 420, mobile: 460 },
-  { date: "2024-05-28", desktop: 233, mobile: 190 },
-  { date: "2024-05-29", desktop: 78, mobile: 130 },
-  { date: "2024-05-30", desktop: 340, mobile: 280 },
-  { date: "2024-05-31", desktop: 178, mobile: 230 },
-  { date: "2024-06-01", desktop: 178, mobile: 200 },
-  { date: "2024-06-02", desktop: 470, mobile: 410 },
-  { date: "2024-06-03", desktop: 103, mobile: 160 },
-  { date: "2024-06-04", desktop: 439, mobile: 380 },
-  { date: "2024-06-05", desktop: 88, mobile: 140 },
-  { date: "2024-06-06", desktop: 294, mobile: 250 },
-  { date: "2024-06-07", desktop: 323, mobile: 370 },
-  { date: "2024-06-08", desktop: 385, mobile: 320 },
-  { date: "2024-06-09", desktop: 438, mobile: 480 },
-  { date: "2024-06-10", desktop: 155, mobile: 200 },
-  { date: "2024-06-11", desktop: 92, mobile: 150 },
-  { date: "2024-06-12", desktop: 492, mobile: 420 },
-  { date: "2024-06-13", desktop: 81, mobile: 130 },
-  { date: "2024-06-14", desktop: 426, mobile: 380 },
-  { date: "2024-06-15", desktop: 307, mobile: 350 },
-  { date: "2024-06-16", desktop: 371, mobile: 310 },
-  { date: "2024-06-17", desktop: 475, mobile: 520 },
-  { date: "2024-06-18", desktop: 107, mobile: 170 },
-  { date: "2024-06-19", desktop: 341, mobile: 290 },
-  { date: "2024-06-20", desktop: 408, mobile: 450 },
-  { date: "2024-06-21", desktop: 169, mobile: 210 },
-  { date: "2024-06-22", desktop: 317, mobile: 270 },
-  { date: "2024-06-23", desktop: 480, mobile: 530 },
-  { date: "2024-06-24", desktop: 132, mobile: 180 },
-  { date: "2024-06-25", desktop: 141, mobile: 190 },
-  { date: "2024-06-26", desktop: 434, mobile: 380 },
-  { date: "2024-06-27", desktop: 448, mobile: 490 },
-  { date: "2024-06-28", desktop: 149, mobile: 200 },
-  { date: "2024-06-29", desktop: 103, mobile: 160 },
-  { date: "2024-06-30", desktop: 446, mobile: 400 },
-]
+// ─── Configuration du graphique ──────────────────────────
 
 const chartConfig = {
-  desktop: {
-    label: "Donneurs",
-    color: "hsl(var(--primary))",
+  donations: {
+    label: "Dons",
+    color: "hsl(142, 71%, 45%)",
   },
-
-  mobile: {
+  alerts: {
     label: "Alertes",
-    color: "hsl(var(--destructive))",
+    color: "hsl(0, 84%, 60%)",
+  },
+  livesSaved: {
+    label: "Vies sauvées",
+    color: "hsl(217, 91%, 60%)",
   },
 } satisfies ChartConfig;
 
-export function ChartAreaInteractive() {
-  const [timeRange, setTimeRange] = React.useState("90d");
-  const filters = useFiltersStore((state) => state.filters);
+// ─── Skeleton ─────────────────────────────────────────────
 
-  const filteredData = chartData.filter((item) => {
-    const date = new Date(item.date)
-    const referenceDate = new Date("2024-06-30")
-    let daysToSubtract = 90
-    if (timeRange === "30d") {
-      daysToSubtract = 30
-    } else if (timeRange === "7d") {
-      daysToSubtract = 7
-    }
-    const startDate = new Date(referenceDate)
-    startDate.setDate(startDate.getDate() - daysToSubtract)
-    return date >= startDate
-  })
-
+function ChartSkeleton() {
   return (
-    <Card className="pt-0">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+    <Card className="relative border-white/10 bg-gradient-to-br from-slate-900/90 to-slate-800/90">
+      <CardHeader className="flex items-center gap-2 space-y-0 border-b border-white/10 py-5 sm:flex-row">
         <div className="grid flex-1 gap-1">
-          <CardTitle>Area Chart - Interactive</CardTitle>
-          <CardDescription>
-            Showing total visitors for the last 3 months
-          </CardDescription>
+          <Skeleton className="h-5 w-40 bg-white/5" />
+          <Skeleton className="h-4 w-60 bg-white/5" />
         </div>
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger
-            className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
-            aria-label="Select a value"
-          >
-            <SelectValue placeholder="Last 3 months" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="90d" className="rounded-lg">
-              Last 3 months
-            </SelectItem>
-            <SelectItem value="30d" className="rounded-lg">
-              Last 30 days
-            </SelectItem>
-            <SelectItem value="7d" className="rounded-lg">
-              Last 7 days
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <Skeleton className="h-9 w-[120px] rounded-xl bg-white/5" />
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[250px] w-full"
-        >
-          <AreaChart data={filteredData}>
-            <defs>
-              <linearGradient id="fillDesktop" x1="0" y1="0" x2="0" y2="1">
-                <stop
-                  offset="5%"
-                  stopColor="var(--color-desktop)"
-                  stopOpacity={0.8}
-                />
-                <stop
-                  offset="95%"
-                  stopColor="var(--color-desktop)"
-                  stopOpacity={0.1}
-                />
-              </linearGradient>
-              <linearGradient id="fillMobile" x1="0" y1="0" x2="0" y2="1">
-                <stop
-                  offset="5%"
-                  stopColor="var(--color-mobile)"
-                  stopOpacity={0.8}
-                />
-                <stop
-                  offset="95%"
-                  stopColor="var(--color-mobile)"
-                  stopOpacity={0.1}
-                />
-              </linearGradient>
-            </defs>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              minTickGap={32}
-              tickFormatter={(value) => {
-                const date = new Date(value)
-                return date.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })
-              }}
-            />
-            <ChartTooltip
-              cursor={false}
-              content={
-                <ChartTooltipContent
-                  labelFormatter={(value) => {
-                    return new Date(value).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })
-                  }}
-                  indicator="dot"
-                />
-              }
-            />
-            <Area
-              dataKey="mobile"
-              type="natural"
-              fill="url(#fillMobile)"
-              stroke="var(--color-mobile)"
-              stackId="a"
-            />
-            <Area
-              dataKey="desktop"
-              type="natural"
-              fill="url(#fillDesktop)"
-              stroke="var(--color-desktop)"
-              stackId="a"
-            />
-            <ChartLegend content={<ChartLegendContent />} />
-          </AreaChart>
-        </ChartContainer>
+        <Skeleton className="h-[300px] w-full rounded-xl bg-white/5" />
       </CardContent>
     </Card>
-  )
+  );
+}
+
+// ─── Stats Card ───────────────────────────────────────────
+
+function StatIndicator({ 
+  label, 
+  value, 
+  icon: Icon, 
+  color 
+}: { 
+  label: string; 
+  value: number; 
+  icon: React.ComponentType<{ className?: string }>; 
+  color: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className={cn("p-2 rounded-xl", `bg-${color}-500/10`)}>
+        <Icon className={cn("w-4 h-4", `text-${color}-500`)} />
+      </div>
+      <div>
+        <p className="text-lg font-bold text-white">{value.toLocaleString()}</p>
+        <p className="text-xs text-white/50">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Composant principal ──────────────────────────────────
+
+export function ChartAreaInteractive() {
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const { filters } = useFiltersStore();
+
+  const { data: chartResponse, isLoading } = useChartData({ 
+    year: selectedYear,
+    region: filters.region,
+    bloodGroup: filters.bloodGroup,
+  });
+
+  const chartData = chartResponse?.data ?? [];
+
+  // Calcul des totaux
+  const totals = useMemo(() => {
+    return chartData.reduce((acc, d) => ({
+      donations: acc.donations + (d.donations || 0),
+      alerts: acc.alerts + (d.alerts || 0),
+      livesSaved: acc.livesSaved + (d.livesSaved || 0),
+    }), { donations: 0, alerts: 0, livesSaved: 0 });
+  }, [chartData]);
+
+  // Années disponibles
+  const availableYears = useMemo(() => 
+    Array.from({ length: 3 }, (_, i) => currentYear - i),
+    [currentYear]
+  );
+
+  if (isLoading) {
+    return <ChartSkeleton />;
+  }
+
+  return (
+    <Card className="relative overflow-hidden border-white/10 bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl">
+      {/* Effet de brillance */}
+      <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 via-transparent to-cyan-500/5" />
+      
+      <CardHeader className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4 space-y-0 border-b border-white/10 pb-5">
+        <div className="grid flex-1 gap-1">
+          <CardTitle className="flex items-center gap-2 text-white">
+            <BarChart3 className="w-5 h-5 text-violet-400" />
+            Évolution mensuelle
+          </CardTitle>
+          <CardDescription className="text-white/50">
+            Dons, alertes et vies sauvées en {selectedYear}
+          </CardDescription>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Mini stats */}
+          <div className="hidden lg:flex items-center gap-4 px-4 py-2 rounded-xl bg-white/5 border border-white/5">
+            <StatIndicator
+              label="Dons"
+              value={totals.donations}
+              icon={Activity}
+              color="green"
+            />
+            <div className="w-px h-8 bg-white/10" />
+            <StatIndicator
+              label="Alertes"
+              value={totals.alerts}
+              icon={AlertCircle}
+              color="red"
+            />
+            <div className="w-px h-8 bg-white/10" />
+            <StatIndicator
+              label="Vies sauvées"
+              value={totals.livesSaved}
+              icon={Heart}
+              color="blue"
+            />
+          </div>
+
+          {/* Sélecteur d'année */}
+          <Select 
+            value={String(selectedYear)} 
+            onValueChange={(v) => setSelectedYear(Number(v))}
+          >
+            <SelectTrigger className="w-[120px] rounded-xl bg-white/5 border-white/10 text-white hover:bg-white/10 transition-all">
+              <Calendar className="w-4 h-4 mr-2 text-white/60" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl bg-slate-900 border-white/10">
+              {availableYears.map((year) => (
+                <SelectItem 
+                  key={year} 
+                  value={String(year)}
+                  className="text-white hover:bg-white/10 rounded-lg cursor-pointer"
+                >
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+
+      <CardContent className="relative px-2 pt-4 sm:px-6 sm:pt-6">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={selectedYear}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ChartContainer
+              config={chartConfig}
+              className="aspect-auto h-[300px] w-full"
+            >
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <defs>
+                  {Object.entries(chartConfig).map(([key, config]) => (
+                    <linearGradient key={key} id={`fill-${key}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={config.color} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={config.color} stopOpacity={0.02} />
+                    </linearGradient>
+                  ))}
+                </defs>
+
+                <CartesianGrid 
+                  vertical={false} 
+                  stroke="rgba(255,255,255,0.05)" 
+                  strokeDasharray="4 4" 
+                />
+
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  minTickGap={32}
+                  tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                  tickFormatter={(value: string) => {
+                    const date = new Date(value);
+                    return date.toLocaleDateString("fr-FR", { month: "short" });
+                  }}
+                />
+
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }}
+                  width={40}
+                />
+
+                <ChartTooltip
+                  cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
+                  content={
+                    <ChartTooltipContent
+                      className="bg-slate-900 border-white/10 text-white shadow-xl backdrop-blur-xl"
+                      labelFormatter={(value: React.ReactNode) => {
+                        // ✅ Corrigé : accepter ReactNode
+                        const strValue = typeof value === 'string' ? value : String(value ?? '');
+                        if (!strValue) return '';
+                        try {
+                          const date = new Date(strValue);
+                          if (isNaN(date.getTime())) return strValue;
+                          return date.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+                        } catch {
+                          return strValue;
+                        }
+                      }}
+                      indicator="line"
+                    />
+                  }
+                />
+
+                {Object.entries(chartConfig).map(([key, config]) => (
+                  <Area
+                    key={key}
+                    dataKey={key}
+                    type="monotone"
+                    fill={`url(#fill-${key})`}
+                    stroke={config.color}
+                    strokeWidth={2}
+                    stackId="1"
+                    animationDuration={1500}
+                    animationEasing="ease-out"
+                  />
+                ))}
+
+                <ChartLegend content={<ChartLegendContent className="text-white/70" />} />
+              </AreaChart>
+            </ChartContainer>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+          <div className="flex items-center gap-2 text-xs text-white/30">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Données mises à jour mensuellement</span>
+          </div>
+          <Badge variant="outline" className="text-[10px] bg-white/5 border-white/10 text-white/50">
+            {selectedYear}
+          </Badge>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
