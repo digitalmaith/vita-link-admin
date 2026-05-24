@@ -102,6 +102,7 @@ const jambaarCount = data?.total ?? data?.data?.length ?? 0;
             </div>
             <FilterBar showBloodGroup showSearch showGrade />
           </div>
+          
           <JambaarDirectory />
         </TabsContent>
 
