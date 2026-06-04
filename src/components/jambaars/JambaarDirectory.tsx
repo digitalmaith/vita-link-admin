@@ -106,13 +106,24 @@ export function JambaarDirectory() {
     );
   }
 
+  // if (error) {
+  //   console.log("Erreur chargement Jambaars:", error);
+  //   return (
+  //     <div className="py-12 text-center border border-dashed rounded-2xl bg-destructive/5 border-destructive/20 text-sm text-destructive font-medium">
+  //       Une erreur est survenue lors du chargement des Jambaars.
+  //     </div>
+  //   );
+  // }
+
   if (error) {
-    return (
-      <div className="py-12 text-center border border-dashed rounded-2xl bg-destructive/5 border-destructive/20 text-sm text-destructive font-medium">
-        Une erreur est survenue lors du chargement des Jambaars.
-      </div>
-    );
-  }
+  console.error("Erreur chargement Jambaars:", error);
+
+  const err = error as any;
+
+  console.error("Message:", err?.message);
+  console.error("Response:", err?.response?.data);
+  console.error("Status:", err?.response?.status);
+}
 
   const jambaars: Jambaar[] = data?.data ?? [];
   const filteredJambaars = jambaars.filter((j) => {
