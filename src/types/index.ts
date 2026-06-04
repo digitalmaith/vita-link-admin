@@ -4,7 +4,7 @@
 
 // --- Shared / Primitives ---
 
-export type BloodGroup = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
+export type BloodGroup = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"| "NON_RENSEIGNE";
 
 export type Region =
   | "Dakar"
