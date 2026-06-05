@@ -23,6 +23,7 @@ import { useSidebarStore } from "@/store/sidebar.store";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { jambaarService } from "@/services/jambaars.service";
+import { CalendarDays } from "lucide-react";
 
 // Types
 interface NavItem {
@@ -102,6 +103,12 @@ export function Sidebar() {
       href: "/badges",
       icon: Award,
       description: "Badges & Défis",
+    },
+    {
+      label: "Journées de don",
+      href: "/donation-days",
+      icon: CalendarDays,
+      description: "Gestion des journées",
     },
   ];
 
