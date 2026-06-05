@@ -46,7 +46,7 @@ export function StructuresMap() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showLegend, setShowLegend] = useState(false);
-  const [mapStyle, setMapStyle] = useState<"dark" | "light" | "satellite">("dark");
+  const [mapStyle, setMapStyle] = useState<"dark" | "light" | "satellite">("satellite");
 
   const { data } = useQuery({
     queryKey: ["structures"],

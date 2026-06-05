@@ -52,8 +52,18 @@ function serializeBloodGroup(bg: BloodGroup): string {
 }
 
 // "O_NEG" → "O-" | "A_POS" → "A+"
-function parseBloodType(raw: string): Jambaar["bloodGroup"] {
-  return raw.replace("_POS", "+").replace("_NEG", "-") as Jambaar["bloodGroup"];
+// function parseBloodType(raw: string): Jambaar["bloodGroup"] {
+//   return raw.replace("_POS", "+").replace("_NEG", "-") as Jambaar["bloodGroup"];
+// }
+
+function parseBloodType(raw?: string | null): BloodGroup {
+  if (!raw) {
+    return "NON_RENSEIGNE";
+  }
+
+  return raw
+    .replace("_POS", "+")
+    .replace("_NEG", "-") as BloodGroup;
 }
 
 const GRADE_MAP: Record<string, Jambaar["grade"]> = {
@@ -109,6 +119,7 @@ export const jambaarService = {
     // if (filters?.grade)     params.grade  = filters.grade;
 
     const raw = await api.get<RawApiResponse>(BASE, { params });
+    console.log(raw.users);
 
     return {
       data: raw.users.map(mapUser),

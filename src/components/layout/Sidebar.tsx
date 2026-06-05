@@ -15,12 +15,15 @@ import {
   LogOut,
   HelpCircle,
   type LucideIcon,
+  Badge,
+  Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/store/sidebar.store";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { jambaarService } from "@/services/jambaars.service";
+import { CalendarDays } from "lucide-react";
 
 // Types
 interface NavItem {
@@ -96,10 +99,16 @@ export function Sidebar() {
       description: "Statistiques & exports",
     },
     {
-      label: "Paramètres",
-      href: "/settings",
-      icon: Settings,
-      description: "Configuration",
+      label: "Badges",
+      href: "/badges",
+      icon: Award,
+      description: "Badges & Défis",
+    },
+    {
+      label: "Journées de don",
+      href: "/donation-days",
+      icon: CalendarDays,
+      description: "Gestion des journées",
     },
   ];
 

@@ -15,23 +15,33 @@ import {
 import { useDashboardKPIs, useMonthlyStats, useRegionStats } from "@/hooks/useDashboardKPIs";
 import { useFiltersStore } from "@/store/filters.store";
 import { useMemo } from "react";
+import type { MonthlyStat } from "@/services/dashboard.service";
+import type { DashboardFilters } from "@/services/dashboard.service";
 
+// ── Données de fallback ──────────────────────────────────────────────────────
 
-// ── Données simulées (en attente endpoint /admin/stats) ──────────────────────
-
-const MONTHLY_DATA = [
+const FALLBACK_MONTHLY_DATA = [
   { mois: "Jan", dons: 420, alertes: 38, tauxReponse: 87 },
   { mois: "Fév", dons: 380, alertes: 42, tauxReponse: 82 },
   { mois: "Mar", dons: 510, alertes: 35, tauxReponse: 91 },
   { mois: "Avr", dons: 490, alertes: 50, tauxReponse: 88 },
   { mois: "Mai", dons: 320, alertes: 61, tauxReponse: 75 },
-  { mois: "Jun", dons: 290, alertes: 58, tauxReponse: 70 },
-  { mois: "Jul", dons: 260, alertes: 70, tauxReponse: 65 },
+  { mois: "Juin", dons: 290, alertes: 58, tauxReponse: 70 },
+  { mois: "Juil", dons: 260, alertes: 70, tauxReponse: 65 },
   { mois: "Aoû", dons: 310, alertes: 65, tauxReponse: 72 },
   { mois: "Sep", dons: 450, alertes: 48, tauxReponse: 85 },
   { mois: "Oct", dons: 530, alertes: 40, tauxReponse: 90 },
   { mois: "Nov", dons: 480, alertes: 44, tauxReponse: 87 },
   { mois: "Déc", dons: 410, alertes: 52, tauxReponse: 83 },
+];
+
+const FALLBACK_REGION_DATA = [
+  { region: "Dakar", dons: 890, pct: 40, color: "#e11d48" },
+  { region: "Thiès", dons: 310, pct: 14, color: "#f97316" },
+  { region: "Saint-Louis", dons: 220, pct: 10, color: "#eab308" },
+  { region: "Ziguinchor", dons: 180, pct: 8, color: "#22c55e" },
+  { region: "Kaolack", dons: 150, pct: 7, color: "#3b82f6" },
+  { region: "Autres", dons: 450, pct: 21, color: "#8b5cf6" },
 ];
 
 const FORECAST_DATA = [
@@ -45,16 +55,6 @@ const FORECAST_DATA = [
   { mois: "Avr", reel: null, prevision: 500 },
 ];
 
-const REGION_DATA = [
-  { region: "Dakar", dons: 890, pct: 40, color: "#e11d48" },
-  { region: "Thiès", dons: 310, pct: 14, color: "#f97316" },
-  { region: "Saint-Louis", dons: 220, pct: 10, color: "#eab308" },
-  { region: "Ziguinchor", dons: 180, pct: 8, color: "#22c55e" },
-  { region: "Kaolack", dons: 150, pct: 7, color: "#3b82f6" },
-  { region: "Autres", dons: 450, pct: 21, color: "#8b5cf6" },
-];
-
-// Périodes critiques détectées
 const CRITICAL_PERIODS = [
   { periode: "Juin – Août", baisse: "-38%", cause: "Vacances scolaires, chaleur", action: "Campagne nationale mai" },
   { periode: "Février", baisse: "-10%", cause: "Post-fêtes de fin d'année", action: "Relance SMS donneurs" },
@@ -67,7 +67,24 @@ const TOOLTIP_STYLE = {
   boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
 };
 
+// ── Types internes ───────────────────────────────────────────────────────────
+
+interface MonthlyDataItem {
+  mois: string;
+  dons: number;
+  alertes: number;
+  tauxReponse: number;
+}
+
+interface RegionDataItem {
+  region: string;
+  dons: number;
+  pct: number;
+  color: string;
+}
+
 // ── Section header ────────────────────────────────────────────────────────────
+
 function SectionHeader({
   icon: Icon,
   title,
@@ -103,42 +120,59 @@ function SectionHeader({
 }
 
 // ── Composant principal ───────────────────────────────────────────────────────
+
 export function DonationTrendChart() {
+  const currentYear = new Date().getFullYear();
   const { filters } = useFiltersStore();
   
-  const activeFilters = useMemo(() => ({
+  // ✅ Filtres actifs (typés correctement)
+  const activeFilters: DashboardFilters = useMemo(() => ({
     region: filters.region,
     bloodGroup: filters.bloodGroup,
     dateFrom: filters.dateFrom,
     dateTo: filters.dateTo,
   }), [filters.region, filters.bloodGroup, filters.dateFrom, filters.dateTo]);
 
+  // ✅ Hooks avec les bons paramètres
   const { data: kpis, isLoading: isLoadingKPIs } = useDashboardKPIs(activeFilters);
-  const { data: monthlyStatsData, isLoading: isLoadingMonthly } = useMonthlyStats(activeFilters);
+  const { data: monthlyStatsData, isLoading: isLoadingMonthly } = useMonthlyStats(currentYear);
   const { data: regionStatsData, isLoading: isLoadingRegions } = useRegionStats(activeFilters);
 
   const isLoading = isLoadingKPIs || isLoadingMonthly || isLoadingRegions;
 
-  // Mapper dynamique pour les stats mensuelles avec fallback
-  const monthlyData = useMemo(() => {
-    if (monthlyStatsData && monthlyStatsData.length > 0) {
-      return monthlyStatsData.map((item: any) => ({
-        mois: item.mois || item.month || item.label || "",
-        dons: item.dons || item.donations || item.donationsCount || 0,
-        alertes: item.alertes || item.alerts || item.alertsCount || 0,
-        tauxReponse: item.tauxReponse || item.responseRate || item.rate || 0,
-      }));
-    }
-    return MONTHLY_DATA;
-  }, [monthlyStatsData]);
+ // ✅ Mapper dynamique pour les stats mensuelles - corrigé
+const monthlyData: MonthlyDataItem[] = useMemo(() => {
+  // Cas 1 : ChartDataResponse (depuis useChartData)
+  if (monthlyStatsData && 'data' in monthlyStatsData && Array.isArray(monthlyStatsData.data)) {
+    return monthlyStatsData.data.map((item: any) => ({
+      mois: item.date ? new Date(item.date).toLocaleDateString("fr-FR", { month: "short" }) : (item.month || ""),
+      dons: item.donations || item.dons || 0,
+      alertes: item.alerts || item.alertes || 0,
+      tauxReponse: item.tauxReponse || item.responseRate || 0,
+    }));
+  }
+  
+  // Cas 2 : Tableau direct de MonthlyStat
+  if (Array.isArray(monthlyStatsData) && monthlyStatsData.length > 0) {
+    return monthlyStatsData.map((item: any) => ({
+      mois: item.month || item.mois || "",
+      dons: item.donations || item.dons || 0,
+      alertes: item.alerts || item.alertes || 0,
+      tauxReponse: item.tauxReponse || item.responseRate || 0,
+    }));
+  }
+  
+  // Cas 3 : Fallback
+  return FALLBACK_MONTHLY_DATA;
+}, [monthlyStatsData]);
 
-  // Mapper dynamique pour les stats régionales avec fallback
-  const regionData = useMemo(() => {
-    if (regionStatsData && regionStatsData.length > 0) {
+  // ✅ Mapper dynamique pour les stats régionales
+  const regionData: RegionDataItem[] = useMemo(() => {
+    if (regionStatsData && Array.isArray(regionStatsData) && regionStatsData.length > 0) {
       const colors = ["#e11d48", "#f97316", "#eab308", "#22c55e", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6"];
-      const total = regionStatsData.reduce((acc: number, item: any) => acc + (item.dons || item.donations || item.donationsCount || 0), 0);
+      const total = regionStatsData.reduce((acc: number, item: any) => acc + (item.donations || item.donationsCount || 0), 0);
       return regionStatsData.map((item: any, idx: number) => {
-        const dons = item.dons || item.donations || item.donationsCount || 0;
+        const dons = item.donations || item.donationsCount || 0;
         const pct = total > 0 ? Math.round((dons / total) * 100) : 0;
         return {
           region: item.region || item.name || "",
@@ -148,14 +182,15 @@ export function DonationTrendChart() {
         };
       });
     }
-    return REGION_DATA;
+    return FALLBACK_REGION_DATA;
   }, [regionStatsData]);
 
-  const totalDons = useMemo(() => monthlyData.reduce((s, m) => s + m.dons, 0), [monthlyData]);
-  const totalAlertes = useMemo(() => monthlyData.reduce((s, m) => s + m.alertes, 0), [monthlyData]);
-  const tauxMoyen = useMemo(() => monthlyData.length > 0 ? Math.round(monthlyData.reduce((s, m) => s + m.tauxReponse, 0) / monthlyData.length) : 0, [monthlyData]);
-  const moisPic = useMemo(() => monthlyData.length > 0 ? monthlyData.reduce((a, b) => (a.dons > b.dons ? a : b)).mois : "N/A", [monthlyData]);
-  const moisCreux = useMemo(() => monthlyData.length > 0 ? monthlyData.reduce((a, b) => (a.dons < b.dons ? a : b)).mois : "N/A", [monthlyData]);
+  // ✅ Calculs dérivés
+  const totalDons = useMemo(() => monthlyData.reduce((s: number, m: MonthlyDataItem) => s + m.dons, 0), [monthlyData]);
+  const totalAlertes = useMemo(() => monthlyData.reduce((s: number, m: MonthlyDataItem) => s + m.alertes, 0), [monthlyData]);
+  const tauxMoyen = useMemo(() => monthlyData.length > 0 ? Math.round(monthlyData.reduce((s: number, m: MonthlyDataItem) => s + m.tauxReponse, 0) / monthlyData.length) : 0, [monthlyData]);
+  const moisPic = useMemo(() => monthlyData.length > 0 ? monthlyData.reduce((a: MonthlyDataItem, b: MonthlyDataItem) => (a.dons > b.dons ? a : b)).mois : "N/A", [monthlyData]);
+  const moisCreux = useMemo(() => monthlyData.length > 0 ? monthlyData.reduce((a: MonthlyDataItem, b: MonthlyDataItem) => (a.dons < b.dons ? a : b)).mois : "N/A", [monthlyData]);
 
   return (
     <div className="space-y-6">
@@ -180,28 +215,28 @@ export function DonationTrendChart() {
                   label: "Dons réalisés",
                   value: (kpis?.totalDonations ?? totalDons).toLocaleString("fr-FR"),
                   sub: "Total annuel cumulé",
-                  trend: "up",
+                  trend: "up" as const,
                   color: "border-l-rose-500",
                 },
                 {
                   label: "Vies sauvées",
                   value: (kpis?.livesSavedEstimate ?? 1800).toLocaleString("fr-FR"),
                   sub: "Estimation nationale",
-                  trend: "up",
+                  trend: "up" as const,
                   color: "border-l-emerald-500",
                 },
                 {
                   label: "Alertes traitées",
                   value: (kpis?.totalAlerts ?? totalAlertes).toLocaleString("fr-FR"),
                   sub: "Demandes de sang",
-                  trend: "neutral",
+                  trend: "neutral" as const,
                   color: "border-l-amber-500",
                 },
                 {
                   label: "Tps réponse moyen",
                   value: `${kpis?.avgResponseTimeMinutes ?? 14.5} min`,
                   sub: "Objectif cible < 10 min",
-                  trend: "down",
+                  trend: "down" as const,
                   color: "border-l-blue-500",
                 },
               ].map(({ label, value, sub, trend, color }) => (
@@ -218,7 +253,6 @@ export function DonationTrendChart() {
             </div>
           )}
 
-          {/* Résumé analytique texte */}
           <Separator className="my-4" />
           <div className="grid grid-cols-3 gap-3 text-center text-xs">
             <div className="bg-muted/40 rounded-lg py-2.5 px-3">
@@ -251,7 +285,7 @@ export function DonationTrendChart() {
             icon={FileBarChart2}
             title="Évolution mensuelle des dons et alertes"
             subtitle="Vue comparative sur 12 mois"
-            badge={monthlyStatsData && monthlyStatsData.length > 0 ? "Temps réel" : "Simulé"}
+            badge={monthlyStatsData && Array.isArray(monthlyStatsData) && monthlyStatsData.length > 0 ? "Temps réel" : "Estimé"}
             gradient="from-rose-500 to-orange-400"
           />
           <CardContent>
@@ -274,22 +308,28 @@ export function DonationTrendChart() {
             icon={MapPin}
             title="Répartition régionale"
             subtitle="Part des dons par région"
-            badge={regionStatsData && regionStatsData.length > 0 ? "Temps réel" : "Simulé"}
+            badge={regionStatsData && Array.isArray(regionStatsData) && regionStatsData.length > 0 ? "Temps réel" : "Estimé"}
             gradient="from-emerald-500 to-teal-400"
           />
           <CardContent>
             <div className="flex justify-center mb-3">
               <PieChart width={150} height={150}>
                 <Pie data={regionData} cx={70} cy={70} innerRadius={40} outerRadius={70} dataKey="dons" paddingAngle={3}>
-                  {regionData.map((entry, i) => (
+                  {regionData.map((entry: RegionDataItem, i: number) => (
                     <Cell key={i} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v, _, p) => [`${v} dons`, p.payload.region]} contentStyle={TOOLTIP_STYLE} />
+                <Tooltip 
+                  formatter={(value: any, name: any, props: any) => {
+                    const region = props?.payload?.region || '';
+                    return [`${value} dons`, region];
+                  }} 
+                  contentStyle={TOOLTIP_STYLE} 
+                />
               </PieChart>
             </div>
             <div className="space-y-1.5">
-              {regionData.map(({ region, dons, pct, color }) => (
+              {regionData.map(({ region, dons, pct, color }: RegionDataItem) => (
                 <div key={region} className="flex items-center gap-2 text-xs">
                   <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
                   <span className="text-muted-foreground flex-1">{region}</span>
@@ -366,7 +406,6 @@ export function DonationTrendChart() {
             </AreaChart>
           </ResponsiveContainer>
 
-          {/* Tableau des projections */}
           <Separator className="my-4" />
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
