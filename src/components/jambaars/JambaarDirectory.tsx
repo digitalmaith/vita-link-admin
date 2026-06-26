@@ -6,48 +6,85 @@ import { useSession } from "next-auth/react";
 import { jambaarService } from "@/services/jambaars.service";
 import { useFiltersStore } from "@/store/filters.store";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PauseCircle, CheckCircle, MapPin, Mail, Sparkles, ShieldCheck } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import {
+  MoreHorizontal,
+  PauseCircle,
+  CheckCircle,
+  MapPin,
+  Mail,
+  ShieldCheck,
+  Phone,
+  Heart,
+  Clock,
+  X,
+  Star,
+  Trophy,
+  Crown,
+  Flame,
+  Calendar,
+  AlertTriangle,
+} from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Jambaar } from "@/types";
+import { cn } from "@/lib/utils";
 
-// Stylisation fine par grade pour l'affichage de l'annuaire
-const GRADE_METADATA: Record<Jambaar["grade"], { label: string; text: string; bg: string; borderL: string; badge: string }> = {
-  ASPIRANT: {
-    label: "🩸 Aspirant",
-    text: "text-rose-600 dark:text-rose-400",
-    bg: "bg-rose-500/5",
-    borderL: "border-l-rose-500",
-    badge: "bg-rose-500/10 hover:bg-rose-500/15 border-rose-500/20 text-rose-600 dark:text-rose-400"
-  },
-  SENTINELLE: {
-    label: "🛡️ Sentinelle",
-    text: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-500/5",
-    borderL: "border-l-blue-500",
-    badge: "bg-blue-500/10 hover:bg-blue-500/15 border-blue-500/20 text-blue-600 dark:text-blue-400"
-  },
-  AMBASSADEUR: {
-    label: "🌟 Ambassadeur",
-    text: "text-amber-600 dark:text-amber-400",
-    bg: "bg-amber-500/5",
-    borderL: "border-l-amber-500",
-    badge: "bg-amber-500/10 hover:bg-amber-500/15 border-amber-500/20 text-amber-600 dark:text-amber-400"
-  },
+const GRADE_CONFIG: Record<Jambaar["grade"], {
+  label: string;
+  color: string;
+  icon: React.ReactNode;
+  emoji: string;
+}> = {
+  ASPIRANT: { label: "Aspirant", color: "#f43f5e", icon: <Flame className="w-3 h-3" />, emoji: "🔥" },
+  SENTINELLE: { label: "Sentinelle", color: "#3b82f6", icon: <ShieldCheck className="w-3 h-3" />, emoji: "🛡️" },
+  AMBASSADEUR: { label: "Ambassadeur", color: "#f59e0b", icon: <Crown className="w-3 h-3" />, emoji: "👑" },
 };
+
+const BLOOD_COLORS: Record<string, string> = {
+  "A+": "#ef4444", "A-": "#f87171", "B+": "#8b5cf6", "B-": "#a78bfa",
+  "AB+": "#ec4899", "AB-": "#f472b6", "O+": "#f59e0b", "O-": "#fbbf24",
+};
+
+// Extrait un message lisible depuis n'importe quelle erreur
+function extractErrorMessage(err: unknown): string {
+  if (!err) return "Erreur inconnue";
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object") {
+    const e = err as Record<string, unknown>;
+    if (typeof e.message === "string") return e.message;
+    if (typeof e.error === "string") return e.error;
+    const json = JSON.stringify(e);
+    if (json !== "{}") return json;
+  }
+  return String(err);
+}
 
 export function JambaarDirectory() {
   const [page, setPage] = useState(1);
+  const [selectedJambaar, setSelectedJambaar] = useState<Jambaar | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  // État du dialog de confirmation suspension
+  const [confirmSuspend, setConfirmSuspend] = useState<{ id: string; name: string } | null>(null);
+
   const { filters } = useFiltersStore();
   const queryClient = useQueryClient();
   const { status: sessionStatus } = useSession();
@@ -56,11 +93,7 @@ export function JambaarDirectory() {
     queryKey: ["jambaars", filters, page],
     queryFn: () =>
       jambaarService.getAll(
-        {
-          bloodGroup: filters.bloodGroup,
-          // grade: filters.grade,
-          search: filters.search,
-        },
+        { bloodGroup: filters.bloodGroup, search: filters.search },
         page
       ),
     enabled: sessionStatus === "authenticated",
@@ -69,16 +102,16 @@ export function JambaarDirectory() {
   const suspend = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       jambaarService.suspend(id, reason),
-
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jambaars"] });
+      setSelectedJambaar(prev => prev ? { ...prev, status: "SUSPENDED" } : null);
+      setConfirmSuspend(null);
       toast.success("Jambaar suspendu");
     },
-
-    onError: (error) => {
-      console.error("Erreur suspension :", error);
-
-      toast.error("Erreur lors de la suspension");
+    onError: (err: unknown) => {
+      const message = extractErrorMessage(err);
+      console.error("Erreur suspension :", message);
+      toast.error("Erreur lors de la suspension", { description: message });
     },
   });
 
@@ -86,108 +119,122 @@ export function JambaarDirectory() {
     mutationFn: (id: string) => jambaarService.reactivate(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jambaars"] });
+      setSelectedJambaar(prev => prev ? { ...prev, status: "ACTIVE" } : null);
       toast.success("Jambaar réactivé");
     },
-    onError: (err: any) => {
-      console.error("Erreur réactivation:", err);
-      toast.error("Erreur lors de la réactivation", {
-        description: err?.message || "Vérifiez la console pour plus de détails.",
-      });
+    onError: (err: unknown) => {
+      const message = extractErrorMessage(err);
+      console.error("Erreur réactivation :", message);
+      toast.error("Erreur lors de la réactivation", { description: message });
     },
   });
 
+  // Ouvre le dialog de confirmation avant de suspendre
+  function handleSuspendRequest(id: string, name: string) {
+    setConfirmSuspend({ id, name });
+  }
+
+  function handleSuspendConfirm() {
+    if (!confirmSuspend) return;
+    suspend.mutate({ id: confirmSuspend.id, reason: "Absence répétée" });
+  }
+
   if (sessionStatus === "loading" || isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-44 rounded-2xl" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <Skeleton key={i} className="h-[76px] rounded-2xl" />
         ))}
       </div>
     );
   }
 
-  // if (error) {
-  //   console.log("Erreur chargement Jambaars:", error);
-  //   return (
-  //     <div className="py-12 text-center border border-dashed rounded-2xl bg-destructive/5 border-destructive/20 text-sm text-destructive font-medium">
-  //       Une erreur est survenue lors du chargement des Jambaars.
-  //     </div>
-  //   );
-  // }
-
   if (error) {
-  console.error("Erreur chargement Jambaars:", error);
-
-  const err = error as any;
-
-  console.error("Message:", err?.message);
-  console.error("Response:", err?.response?.data);
-  console.error("Status:", err?.response?.status);
-}
+    console.error("Erreur chargement Jambaars:", error);
+  }
 
   const jambaars: Jambaar[] = data?.data ?? [];
   const filteredJambaars = jambaars.filter((j) => {
-  const matchBloodGroup =
-    !filters.bloodGroup || j.bloodGroup === filters.bloodGroup;
-
-  const matchGrade =
-    !filters.grade || j.grade === filters.grade;
-
-  const matchSearch =
-    !filters.search ||
-    `${j.firstName} ${j.lastName}`
-      .toLowerCase()
-      .includes(filters.search.toLowerCase());
-
-  return matchBloodGroup && matchGrade && matchSearch;
-});
+    const matchBloodGroup = !filters.bloodGroup || j.bloodGroup === filters.bloodGroup;
+    const matchGrade = !filters.grade || j.grade === filters.grade;
+    const matchSearch =
+      !filters.search ||
+      `${j.firstName} ${j.lastName}`.toLowerCase().includes(filters.search.toLowerCase());
+    return matchBloodGroup && matchGrade && matchSearch;
+  });
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div className="space-y-4">
+      {/* Grille */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {filteredJambaars.length === 0 ? (
-          <div className="col-span-full py-16 text-center border border-dashed rounded-2xl bg-card">
-            <p className="text-muted-foreground font-semibold">Aucun Jambaar trouvé.</p>
+          <div className="col-span-full py-20 text-center">
+            <p className="text-sm text-muted-foreground/50 font-light">Aucun Jambaar trouvé</p>
           </div>
         ) : (
           filteredJambaars.map((j) => {
-            const currentGrade = GRADE_METADATA[j.grade] || {
-              label: j.grade,
-              text: "text-muted-foreground",
-              bg: "bg-muted/50",
-              borderL: "border-l-muted",
-              badge: ""
-            };
-
+            const grade = GRADE_CONFIG[j.grade] || GRADE_CONFIG.ASPIRANT;
+            const bloodColor = BLOOD_COLORS[j.bloodGroup] || "#6b7280";
             const isSuspended = j.status !== "ACTIVE";
 
             return (
-              <Card
+              <div
                 key={j.id}
-                className={`overflow-hidden border border-border/60 bg-gradient-to-br from-card to-card/50 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-l-4 ${currentGrade.borderL} relative group ${isSuspended ? 'opacity-85' : ''}`}
+                className={cn(
+                  "group relative transition-all duration-300",
+                  isSuspended && "opacity-40"
+                )}
               >
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-11 w-11 ring-2 ring-primary/5 transition-transform duration-300 group-hover:scale-105">
-                        <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
-                          {getInitials(`${j.firstName} ${j.lastName}`)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="space-y-0.5">
-                        <p className="font-extrabold text-sm text-foreground group-hover:text-primary transition-colors">
-                          {j.firstName} {j.lastName}
-                        </p>
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${currentGrade.badge}`}>
-                            {currentGrade.label}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                <div
+                  onClick={() => {
+                    setSelectedJambaar(j);
+                    setDialogOpen(true);
+                  }}
+                  className="relative flex items-center gap-4 p-3.5 rounded-2xl bg-card border border-border/30 shadow-sm hover:shadow-md hover:border-border/50 transition-all duration-300 cursor-pointer"
+                >
+                  <div
+                    className="absolute left-0 top-3 bottom-3 w-[2px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                    style={{ backgroundColor: grade.color }}
+                  />
 
+                  <div className="relative shrink-0">
+                    <div
+                      className="absolute inset-0 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                      style={{ backgroundColor: grade.color + "30" }}
+                    />
+                    <Avatar className="relative h-10 w-10 ring-1 ring-border/30 group-hover:ring-0 transition-all">
+                      <AvatarFallback
+                        className="text-xs font-bold text-white"
+                        style={{ background: `linear-gradient(135deg, ${grade.color}dd, ${grade.color})` }}
+                      >
+                        {getInitials(`${j.firstName} ${j.lastName}`)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors">
+                      {j.firstName} {j.lastName}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        <MapPin className="w-2.5 h-2.5" />
+                        {j.city !== "—" ? j.city : "N/A"}
+                      </span>
+                      <span className="w-1 h-1 rounded-full bg-muted-foreground/20" />
+                      <span className="text-[11px] font-bold" style={{ color: bloodColor }}>
+                        {j.bloodGroup}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right">
+                      <p className="text-sm font-bold tabular-nums">{j.totalDonations}</p>
+                      <p className="text-[9px] text-muted-foreground/60">dons</p>
+                    </div>
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted">
                           <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
                         </Button>
@@ -196,9 +243,10 @@ export function JambaarDirectory() {
                         {j.status === "ACTIVE" ? (
                           <DropdownMenuItem
                             className="text-amber-600 font-semibold focus:text-amber-600 focus:bg-amber-500/5 cursor-pointer"
-                            onClick={() =>
-                              suspend.mutate({ id: j.id, reason: "Absence répétée" })
-                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSuspendRequest(j.id, `${j.firstName} ${j.lastName}`);
+                            }}
                           >
                             <PauseCircle className="mr-2 h-4 w-4" />
                             Suspendre
@@ -206,7 +254,10 @@ export function JambaarDirectory() {
                         ) : (
                           <DropdownMenuItem
                             className="text-emerald-600 font-semibold focus:text-emerald-600 focus:bg-emerald-500/5 cursor-pointer"
-                            onClick={() => reactivate.mutate(j.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              reactivate.mutate(j.id);
+                            }}
                           >
                             <CheckCircle className="mr-2 h-4 w-4" />
                             Réactiver
@@ -215,77 +266,244 @@ export function JambaarDirectory() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-
-                  {/* Premier Grid Statistique */}
-                  <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                    <div className="bg-muted/30 rounded-xl py-2 px-1 border border-border/20 transition-colors hover:bg-muted/40">
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Groupe</p>
-                      <p className="text-sm font-black text-rose-500 mt-0.5">{j.bloodGroup}</p>
-                    </div>
-                    <div className="bg-muted/30 rounded-xl py-2 px-1 border border-border/20 transition-colors hover:bg-muted/40">
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Dons</p>
-                      <p className="text-sm font-black text-foreground mt-0.5">{j.totalDonations}</p>
-                    </div>
-                    <div className="bg-muted/30 rounded-xl py-2 px-1 border border-border/20 transition-colors hover:bg-muted/40">
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Présence</p>
-                      <p className="text-sm font-black text-foreground mt-0.5">{j.commitmentRate}%</p>
-                    </div>
-                  </div>
-
-                  {/* Second Grid Statistique */}
-                  <div className="mt-2 grid grid-cols-2 gap-2 text-center">
-                    <div className="bg-gradient-to-br from-amber-500/[0.03] to-amber-600/[0.01] rounded-xl py-2 px-1 border border-amber-500/10 transition-colors hover:bg-amber-500/[0.06]">
-                      <p className="text-[10px] text-amber-600/80 dark:text-amber-400 uppercase font-bold tracking-wider flex items-center justify-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500/20" /> Points
-                      </p>
-                      <p className="text-sm font-black text-amber-600 dark:text-amber-400 mt-0.5">{j.points}</p>
-                    </div>
-                    <div className="bg-muted/30 rounded-xl py-2 px-1 border border-border/20 transition-colors hover:bg-muted/40">
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Téléphone</p>
-                      <p className="text-xs font-bold text-foreground mt-1 truncate px-1">{j.phone}</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-3.5 border-t border-border/60 flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground font-semibold flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-muted-foreground/60" />
-                      {j.city !== "—" ? j.city : "Ville non renseignée"}
-                    </span>
-                    <StatusBadge status={j.status} />
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             );
           })
         )}
       </div>
 
-      {/* Pagination moderne */}
-      {data && data.totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 p-4 rounded-xl border bg-card text-sm text-muted-foreground shadow-sm">
-          <span className="font-medium text-xs sm:text-sm">
-            Page <strong className="text-foreground">{page}</strong> sur <strong className="text-foreground">{data.totalPages}</strong> · <strong className="text-foreground">{data.total}</strong> Jambaars
-          </span>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="font-semibold text-xs py-1.5 h-9 rounded-lg"
-              disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Précédent
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="font-semibold text-xs py-1.5 h-9 rounded-lg"
-              disabled={page === data.totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Suivant
-            </Button>
+      {/* Dialog de confirmation suspension */}
+      <Dialog open={!!confirmSuspend} onOpenChange={(open) => { if (!open) setConfirmSuspend(null); }}>
+        <DialogContent className="max-w-xs rounded-2xl border-border/30 shadow-2xl">
+          <div className="flex flex-col items-center text-center gap-3 pt-2">
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-amber-500" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold">Suspendre ce Jambaar ?</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground mt-1">
+                <span className="font-semibold text-foreground">{confirmSuspend?.name}</span> ne pourra
+                plus accéder à la plateforme tant que la suspension n'est pas levée.
+              </DialogDescription>
+            </div>
           </div>
+          <DialogFooter className="flex gap-2 mt-2">
+            <Button
+              variant="outline"
+              className="flex-1 rounded-xl"
+              onClick={() => setConfirmSuspend(null)}
+              disabled={suspend.isPending}
+            >
+              Annuler
+            </Button>
+            <Button
+              className="flex-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold"
+              onClick={handleSuspendConfirm}
+              disabled={suspend.isPending}
+            >
+              {suspend.isPending ? "En cours…" : "Confirmer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Popup détail Jambaar */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-sm p-0 gap-0 overflow-hidden rounded-3xl border-border/30 shadow-2xl bg-card">
+          <VisuallyHidden>
+            <DialogTitle>
+              {selectedJambaar
+                ? `${selectedJambaar.firstName} ${selectedJambaar.lastName}`
+                : "Détails"}
+            </DialogTitle>
+          </VisuallyHidden>
+
+          {selectedJambaar && (() => {
+            const grade = GRADE_CONFIG[selectedJambaar.grade] || GRADE_CONFIG.ASPIRANT;
+            const bloodColor = BLOOD_COLORS[selectedJambaar.bloodGroup] || "#6b7280";
+            const isSuspended = selectedJambaar.status !== "ACTIVE";
+
+            const createdAt = selectedJambaar.createdAt
+              ? new Date(selectedJambaar.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+              : null;
+
+            const updatedAt = selectedJambaar.createdAt
+              ? new Date(selectedJambaar.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+              : null;
+
+            return (
+              <div className="relative">
+                {/* Overlay décoratif — ne doit pas capturer les clics */}
+                <div
+                  className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                  style={{ background: `radial-gradient(circle at 50% 0%, ${grade.color} 0%, transparent 70%)` }}
+                />
+
+                <button
+                  onClick={() => setDialogOpen(false)}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center z-20 hover:bg-background transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+
+                <div className="relative z-10 pt-10 pb-6 flex flex-col items-center text-center px-6">
+                  <div className="relative mb-4">
+                    <div
+                      className="absolute inset-0 rounded-full blur-xl opacity-20 pointer-events-none"
+                      style={{ backgroundColor: grade.color }}
+                    />
+                    <Avatar className="relative h-16 w-16 ring-2 ring-background shadow-sm">
+                      <AvatarFallback
+                        className="text-xl font-bold text-white"
+                        style={{ background: `linear-gradient(135deg, ${grade.color}, ${grade.color}cc)` }}
+                      >
+                        {getInitials(`${selectedJambaar.firstName} ${selectedJambaar.lastName}`)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <h2 className="text-lg font-bold tracking-tight">
+                    {selectedJambaar.firstName} {selectedJambaar.lastName}
+                  </h2>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <Badge
+                      className="text-[10px] font-medium gap-1 px-2 py-0 border-0 shadow-sm"
+                      style={{ backgroundColor: grade.color + "10", color: grade.color }}
+                    >
+                      {grade.emoji} {grade.label}
+                    </Badge>
+                    <Badge
+                      className="text-[10px] font-bold px-2 py-0 border-0 shadow-sm"
+                      style={{ backgroundColor: bloodColor + "10", color: bloodColor }}
+                    >
+                      {selectedJambaar.bloodGroup}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="relative z-10 grid grid-cols-3 divide-x divide-border/30 border-y border-border/30 bg-muted/20">
+                  {[
+                    { value: selectedJambaar.totalDonations, label: "Dons" },
+                    { value: `${selectedJambaar.commitmentRate}%`, label: "Présence" },
+                    { value: selectedJambaar.points, label: "Points" },
+                  ].map((stat, i) => (
+                    <div key={i} className="py-4 text-center">
+                      <p className="text-lg font-extrabold tracking-tight">{stat.value}</p>
+                      <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="relative z-10 px-6 py-4 space-y-3">
+                  <div className="flex items-center gap-2.5 text-sm">
+                    <Phone className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
+                    <span className="text-muted-foreground">{selectedJambaar.phone}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-sm">
+                    <MapPin className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
+                    <span className="text-muted-foreground">{selectedJambaar.city !== "—" ? selectedJambaar.city : "N/A"}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-sm">
+                    <Mail className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
+                    <span className="text-muted-foreground truncate">{selectedJambaar.email || "—"}</span>
+                  </div>
+                </div>
+
+                <div className="relative z-10 px-6 pb-3 space-y-2">
+                  {createdAt && (
+                    <div className="flex items-center gap-2.5 text-xs text-muted-foreground/60">
+                      <Calendar className="w-3 h-3 shrink-0" />
+                      <span>Inscrit le {createdAt}</span>
+                    </div>
+                  )}
+                  {updatedAt && (
+                    <div className="flex items-center gap-2.5 text-xs text-muted-foreground/60">
+                      <Clock className="w-3 h-3 shrink-0" />
+                      <span>Dernière modification : {updatedAt}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative z-10 px-6 pb-2">
+                  <div className="h-1 rounded-full bg-muted/50 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-1000"
+                      style={{
+                        width: `${selectedJambaar.commitmentRate}%`,
+                        background: `linear-gradient(90deg, ${grade.color}, ${grade.color}66)`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="relative z-10 px-6 py-3 flex flex-wrap gap-1.5">
+                  {[
+                    { cond: selectedJambaar.totalDonations >= 1, icon: Heart, label: "1er don" },
+                    { cond: selectedJambaar.totalDonations >= 5, icon: ShieldCheck, label: "5 dons" },
+                    { cond: selectedJambaar.totalDonations >= 10, icon: Trophy, label: "10 dons" },
+                    { cond: selectedJambaar.commitmentRate >= 80, icon: Star, label: "Assidu" },
+                  ].filter(b => b.cond).map((b, i) => (
+                    <Badge key={i} variant="outline" className="gap-1 px-2 py-0.5 text-[10px] rounded-full border-border/30">
+                      <b.icon className="w-2.5 h-2.5" /> {b.label}
+                    </Badge>
+                  ))}
+                </div>
+
+                <div className="relative z-10 p-4 border-t border-border/30">
+                  {isSuspended ? (
+                    <Button
+                      className="w-full h-10 rounded-xl font-semibold text-sm bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+                      disabled={reactivate.isPending}
+                      onClick={() => reactivate.mutate(selectedJambaar.id)}
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      {reactivate.isPending ? "En cours…" : "Réactiver"}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="destructive"
+                      className="w-full h-10 rounded-xl font-semibold text-sm shadow-sm"
+                      disabled={suspend.isPending}
+                      onClick={() => handleSuspendRequest(
+                        selectedJambaar.id,
+                        `${selectedJambaar.firstName} ${selectedJambaar.lastName}`
+                      )}
+                    >
+                      <PauseCircle className="w-4 h-4 mr-2" />
+                      Suspendre
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Pagination */}
+      {data && data.totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs font-medium"
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            ← Précédent
+          </Button>
+          <span className="text-xs text-muted-foreground/50 tabular-nums">
+            {page} / {data.totalPages}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs font-medium"
+            disabled={page === data.totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Suivant →
+          </Button>
         </div>
       )}
     </div>
