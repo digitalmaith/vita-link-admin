@@ -72,8 +72,9 @@ export default function LoginPage() {
           {/* Citation */}
           <div className="space-y-6">
             <div className="w-12 h-px bg-gradient-to-r from-red-500 to-transparent"></div>
-            <blockquote className="text-3xl font-light text-white/90 leading-relaxed tracking-wide">
-              "Chaque goutte de sang est une <span className="text-red-400 font-normal">promesse de vie</span> qui unit notre nation."
+            <blockquote className="text-xl font-medium text-white/90 leading-relaxed tracking-wide">
+              "PARCE QU'AUCUNE VIE NE DEVRAIT S'ÉTEINDRE À CAUSE D'UNE RUPTURE D'INFORMATION.
+"
             </blockquote>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
