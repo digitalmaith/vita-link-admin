@@ -8,7 +8,7 @@ import { useFiltersStore } from "@/store/filters.store";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -359,12 +359,6 @@ export function JambaarDirectory() {
                       style={{ backgroundColor: grade.color }}
                     />
                     <Avatar className="relative h-16 w-16 ring-2 ring-background shadow-sm">
-                      {selectedJambaar.avatarUrl && (
-                        <AvatarImage 
-                          src={selectedJambaar.avatarUrl} 
-                          alt={`${selectedJambaar.firstName} ${selectedJambaar.lastName}`} 
-                        />
-                      )}
                       <AvatarFallback
                         className="text-xl font-bold text-white"
                         style={{ background: `linear-gradient(135deg, ${grade.color}, ${grade.color}cc)` }}
