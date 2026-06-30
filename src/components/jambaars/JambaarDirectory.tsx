@@ -5,7 +5,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { jambaarService } from "@/services/jambaars.service";
 import { useFiltersStore } from "@/store/filters.store";
-import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,32 +15,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import {
-  MoreHorizontal,
-  PauseCircle,
-  CheckCircle,
-  MapPin,
-  Mail,
-  ShieldCheck,
-  Phone,
-  Heart,
-  Clock,
-  X,
-  Star,
-  Trophy,
-  Crown,
-  Flame,
-  Calendar,
-  AlertTriangle,
-} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -102,50 +75,11 @@ function extractErrorMessage(err: unknown): string {
   }
   return String(err);
 }
-import { cn } from "@/lib/utils";
-
-const GRADE_CONFIG: Record<Jambaar["grade"], {
-  label: string;
-  color: string;
-  icon: React.ReactNode;
-  emoji: string;
-}> = {
-  ASPIRANT: { label: "Aspirant", color: "#f43f5e", icon: <Flame className="w-3 h-3" />, emoji: "🔥" },
-  SENTINELLE: { label: "Sentinelle", color: "#3b82f6", icon: <ShieldCheck className="w-3 h-3" />, emoji: "🛡️" },
-  AMBASSADEUR: { label: "Ambassadeur", color: "#f59e0b", icon: <Crown className="w-3 h-3" />, emoji: "👑" },
-};
-
-const BLOOD_COLORS: Record<string, string> = {
-  "A+": "#ef4444", "A-": "#f87171", "B+": "#8b5cf6", "B-": "#a78bfa",
-  "AB+": "#ec4899", "AB-": "#f472b6", "O+": "#f59e0b", "O-": "#fbbf24",
-};
-
-// Extrait un message lisible depuis n'importe quelle erreur
-function extractErrorMessage(err: unknown): string {
-  if (!err) return "Erreur inconnue";
-  if (err instanceof Error) return err.message;
-  if (typeof err === "object") {
-    const e = err as Record<string, unknown>;
-    if (typeof e.message === "string") return e.message;
-    if (typeof e.error === "string") return e.error;
-    const json = JSON.stringify(e);
-    if (json !== "{}") return json;
-  }
-  return String(err);
-}
 
 export function JambaarDirectory() {
   const [page, setPage] = useState(1);
   const [selectedJambaar, setSelectedJambaar] = useState<Jambaar | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  // État du dialog de confirmation suspension
-  const [confirmSuspend, setConfirmSuspend] = useState<{ id: string; name: string } | null>(null);
-
-  const [selectedJambaar, setSelectedJambaar] = useState<Jambaar | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-
-  // État du dialog de confirmation suspension
   const [confirmSuspend, setConfirmSuspend] = useState<{ id: string; name: string } | null>(null);
 
   const { filters } = useFiltersStore();
@@ -156,7 +90,6 @@ export function JambaarDirectory() {
     queryKey: ["jambaars", filters, page],
     queryFn: () =>
       jambaarService.getAll(
-        { bloodGroup: filters.bloodGroup, search: filters.search },
         { bloodGroup: filters.bloodGroup, search: filters.search },
         page
       ),
@@ -170,14 +103,8 @@ export function JambaarDirectory() {
       queryClient.invalidateQueries({ queryKey: ["jambaars"] });
       setSelectedJambaar(prev => prev ? { ...prev, status: "SUSPENDED" } : null);
       setConfirmSuspend(null);
-      setSelectedJambaar(prev => prev ? { ...prev, status: "SUSPENDED" } : null);
-      setConfirmSuspend(null);
       toast.success("Jambaar suspendu");
     },
-    onError: (err: unknown) => {
-      const message = extractErrorMessage(err);
-      console.error("Erreur suspension :", message);
-      toast.error("Erreur lors de la suspension", { description: message });
     onError: (err: unknown) => {
       const message = extractErrorMessage(err);
       console.error("Erreur suspension :", message);
@@ -190,13 +117,8 @@ export function JambaarDirectory() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jambaars"] });
       setSelectedJambaar(prev => prev ? { ...prev, status: "ACTIVE" } : null);
-      setSelectedJambaar(prev => prev ? { ...prev, status: "ACTIVE" } : null);
       toast.success("Jambaar réactivé");
     },
-    onError: (err: unknown) => {
-      const message = extractErrorMessage(err);
-      console.error("Erreur réactivation :", message);
-      toast.error("Erreur lors de la réactivation", { description: message });
     onError: (err: unknown) => {
       const message = extractErrorMessage(err);
       console.error("Erreur réactivation :", message);
@@ -204,17 +126,6 @@ export function JambaarDirectory() {
     },
   });
 
-  // Ouvre le dialog de confirmation avant de suspendre
-  function handleSuspendRequest(id: string, name: string) {
-    setConfirmSuspend({ id, name });
-  }
-
-  function handleSuspendConfirm() {
-    if (!confirmSuspend) return;
-    suspend.mutate({ id: confirmSuspend.id, reason: "Absence répétée" });
-  }
-
-  // Ouvre le dialog de confirmation avant de suspendre
   function handleSuspendRequest(id: string, name: string) {
     setConfirmSuspend({ id, name });
   }
@@ -229,9 +140,6 @@ export function JambaarDirectory() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {Array.from({ length: 12 }).map((_, i) => (
           <Skeleton key={i} className="h-[76px] rounded-2xl" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <Skeleton key={i} className="h-[76px] rounded-2xl" />
         ))}
       </div>
     );
@@ -240,20 +148,10 @@ export function JambaarDirectory() {
   if (error) {
     console.error("Erreur chargement Jambaars:", error);
   }
-    console.error("Erreur chargement Jambaars:", error);
-  }
 
   const jambaars: Jambaar[] = data?.data ?? [];
-  console.log("jambar : ", jambaars );
   
   const filteredJambaars = jambaars.filter((j) => {
-    const matchBloodGroup = !filters.bloodGroup || j.bloodGroup === filters.bloodGroup;
-    const matchGrade = !filters.grade || j.grade === filters.grade;
-    const matchSearch =
-      !filters.search ||
-      `${j.firstName} ${j.lastName}`.toLowerCase().includes(filters.search.toLowerCase());
-    return matchBloodGroup && matchGrade && matchSearch;
-  });
     const matchBloodGroup = !filters.bloodGroup || j.bloodGroup === filters.bloodGroup;
     const matchGrade = !filters.grade || j.grade === filters.grade;
     const matchSearch =
@@ -266,12 +164,7 @@ export function JambaarDirectory() {
     <div className="space-y-4">
       {/* Grille */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-    <div className="space-y-4">
-      {/* Grille */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {filteredJambaars.length === 0 ? (
-          <div className="col-span-full py-20 text-center">
-            <p className="text-sm text-muted-foreground/50 font-light">Aucun Jambaar trouvé</p>
           <div className="col-span-full py-20 text-center">
             <p className="text-sm text-muted-foreground/50 font-light">Aucun Jambaar trouvé</p>
           </div>
@@ -279,12 +172,9 @@ export function JambaarDirectory() {
           filteredJambaars.map((j) => {
             const grade = GRADE_CONFIG[j.grade] || GRADE_CONFIG.ASPIRANT;
             const bloodColor = BLOOD_COLORS[j.bloodGroup] || "#6b7280";
-            const grade = GRADE_CONFIG[j.grade] || GRADE_CONFIG.ASPIRANT;
-            const bloodColor = BLOOD_COLORS[j.bloodGroup] || "#6b7280";
             const isSuspended = j.status !== "ACTIVE";
 
             return (
-              <div
               <div
                 key={j.id}
                 className={cn(
@@ -345,7 +235,6 @@ export function JambaarDirectory() {
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted">
                           <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
                         </Button>
@@ -354,10 +243,6 @@ export function JambaarDirectory() {
                         {j.status === "ACTIVE" ? (
                           <DropdownMenuItem
                             className="text-amber-600 font-semibold focus:text-amber-600 focus:bg-amber-500/5 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSuspendRequest(j.id, `${j.firstName} ${j.lastName}`);
-                            }}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleSuspendRequest(j.id, `${j.firstName} ${j.lastName}`);
@@ -373,10 +258,6 @@ export function JambaarDirectory() {
                               e.stopPropagation();
                               reactivate.mutate(j.id);
                             }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              reactivate.mutate(j.id);
-                            }}
                           >
                             <CheckCircle className="mr-2 h-4 w-4" />
                             Réactiver
@@ -385,8 +266,6 @@ export function JambaarDirectory() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                </div>
-              </div>
                 </div>
               </div>
             );
@@ -410,43 +289,19 @@ export function JambaarDirectory() {
             </div>
           </div>
           <DialogFooter className="flex gap-2 mt-2">
-      {/* Dialog de confirmation suspension */}
-      <Dialog open={!!confirmSuspend} onOpenChange={(open) => { if (!open) setConfirmSuspend(null); }}>
-        <DialogContent className="max-w-xs rounded-2xl border-border/30 shadow-2xl">
-          <div className="flex flex-col items-center text-center gap-3 pt-2">
-            <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-amber-500" />
-            </div>
-            <div>
-              <DialogTitle className="text-base font-bold">Suspendre ce Jambaar ?</DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground mt-1">
-                <span className="font-semibold text-foreground">{confirmSuspend?.name}</span> ne pourra
-                plus accéder à la plateforme tant que la suspension n'est pas levée.
-              </DialogDescription>
-            </div>
-          </div>
-          <DialogFooter className="flex gap-2 mt-2">
             <Button
               variant="outline"
               className="flex-1 rounded-xl"
               onClick={() => setConfirmSuspend(null)}
               disabled={suspend.isPending}
-              className="flex-1 rounded-xl"
-              onClick={() => setConfirmSuspend(null)}
-              disabled={suspend.isPending}
             >
-              Annuler
               Annuler
             </Button>
             <Button
               className="flex-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold"
               onClick={handleSuspendConfirm}
               disabled={suspend.isPending}
-              className="flex-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold"
-              onClick={handleSuspendConfirm}
-              disabled={suspend.isPending}
             >
-              {suspend.isPending ? "En cours…" : "Confirmer"}
               {suspend.isPending ? "En cours…" : "Confirmer"}
             </Button>
           </DialogFooter>
@@ -479,7 +334,6 @@ export function JambaarDirectory() {
 
             return (
               <div className="relative">
-                {/* Overlay décoratif — ne doit pas capturer les clics */}
                 <div
                   className="absolute inset-0 opacity-[0.03] pointer-events-none"
                   style={{ background: `radial-gradient(circle at 50% 0%, ${grade.color} 0%, transparent 70%)` }}
