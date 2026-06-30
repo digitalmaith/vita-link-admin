@@ -26,6 +26,7 @@ interface RawJambaarUser {
   lastName: string;
   email: string;
   phone: string;
+  avatarUrl: string;
   role: string;
   bloodType: string;
   isActive: boolean;
@@ -84,6 +85,7 @@ function mapUser(u: RawJambaarUser): Jambaar {
     lastName: u.lastName,
     email: u.email,
     phone: u.phone,
+    avatarUrl: u.avatarUrl, // Correction : utiliser u.avatarUrl au lieu de avatarUrl
     bloodGroup: parseBloodType(u.bloodType),
     region: "Dakar",
     city: u.jambaarsProfile?.city ?? "—",

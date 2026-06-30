@@ -8,7 +8,7 @@ import { useFiltersStore } from "@/store/filters.store";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -154,6 +154,8 @@ export function JambaarDirectory() {
   }
 
   const jambaars: Jambaar[] = data?.data ?? [];
+  console.log("jambar : ", jambaars );
+  
   const filteredJambaars = jambaars.filter((j) => {
     const matchBloodGroup = !filters.bloodGroup || j.bloodGroup === filters.bloodGroup;
     const matchGrade = !filters.grade || j.grade === filters.grade;
@@ -203,6 +205,9 @@ export function JambaarDirectory() {
                       style={{ backgroundColor: grade.color + "30" }}
                     />
                     <Avatar className="relative h-10 w-10 ring-1 ring-border/30 group-hover:ring-0 transition-all">
+                      {j.avatarUrl && (
+                        <AvatarImage src={j.avatarUrl} alt={`${j.firstName} ${j.lastName}`} />
+                      )}
                       <AvatarFallback
                         className="text-xs font-bold text-white"
                         style={{ background: `linear-gradient(135deg, ${grade.color}dd, ${grade.color})` }}
@@ -219,7 +224,7 @@ export function JambaarDirectory() {
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                         <MapPin className="w-2.5 h-2.5" />
-                        {j.city !== "—" ? j.city : "N/A"}
+                        {j.city !== "—" ? j.city : "pas de ville"}
                       </span>
                       <span className="w-1 h-1 rounded-full bg-muted-foreground/20" />
                       <span className="text-[11px] font-bold" style={{ color: bloodColor }}>
@@ -354,6 +359,12 @@ export function JambaarDirectory() {
                       style={{ backgroundColor: grade.color }}
                     />
                     <Avatar className="relative h-16 w-16 ring-2 ring-background shadow-sm">
+                      {selectedJambaar.avatarUrl && (
+                        <AvatarImage 
+                          src={selectedJambaar.avatarUrl} 
+                          alt={`${selectedJambaar.firstName} ${selectedJambaar.lastName}`} 
+                        />
+                      )}
                       <AvatarFallback
                         className="text-xl font-bold text-white"
                         style={{ background: `linear-gradient(135deg, ${grade.color}, ${grade.color}cc)` }}

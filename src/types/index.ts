@@ -101,6 +101,7 @@ export interface Jambaar {
   lastName: string;
   phone: string;
   email?: string;
+  avatarUrl?: string;
   bloodGroup: BloodGroup;
   region: Region;
   city: string;
